@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KiP: The Great Infiltration</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a12; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+/* ── Screens ── */
+.screen { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; }
+.screen.active { display: flex; }
+
+/* ── Title Screen ── */
+#title-screen { background: radial-gradient(ellipse at 50% 30%, #1a1a2e 0%, #0a0a12 100%); text-align: center; gap: 24px; }
+#title-screen h1 { font-size: 42px; letter-spacing: 2px; }
+#title-screen h1 .k { color: #f5a623; }
+#title-screen h1 .i { color: #4cd964; }
+#title-screen h1 .p { color: #ffffff; }
+#title-screen h2 { color: #8888aa; font-size: 16px; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; }
+.subtitle-line { color: #6a6a8a; font-size: 13px; margin-top: -12px; font-style: italic; }
+.btn { background: linear-gradient(135deg, #f5a623 0%, #e8961e 100%); color: #0a0a12; border: none; padding: 16px 48px; border-radius: 30px; font-size: 18px; font-weight: 700; cursor: pointer; letter-spacing: 1px; margin-top: 16px; transition: transform 0.15s, box-shadow 0.15s; }
+.btn:active { transform: scale(0.96); }
+.btn-secondary { background: transparent; border: 2px solid #4cd964; color: #4cd964; padding: 12px 36px; font-size: 14px; }
+
+/* ── HUD ── */
+#game-screen { background: #0a0a12; }
+#hud { width: 100%; max-width: 420px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+.hud-left, .hud-right { display: flex; align-items: center; gap: 12px; }
+.hud-lives { display: flex; gap: 4px; }
+.hud-heart { width: 22px; height: 22px; fill: #ff4757; transition: opacity 0.3s; }
+.hud-heart.lost { fill: #333; opacity: 0.4; }
+.hud-score { color: #f5a623; font-size: 20px; font-weight: 700; }
+.hud-timer { color: #fff; font-size: 18px; font-weight: 600; min-width: 48px; text-align: right; }
+.hud-timer.urgent { color: #ff4757; animation: pulse-urgent 0.5s infinite alternate; }
+@keyframes pulse-urgent { from { opacity: 1; } to { opacity: 0.5; } }
+
+.hud-level { color: #8888aa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── Canvas Container ── */
+#canvas-wrap { position: relative; width: 100%; max-width: 420px; aspect-ratio: 7/8; }
+#game-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* ── X-Ray Button ── */
+#xray-btn { position: absolute; bottom: 8px; right: 8px; width: 52px; height: 52px; border-radius: 50%; background: rgba(76, 217, 100, 0.15); border: 2px solid #4cd964; color: #4cd964; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px; transition: all 0.2s; }
+#xray-btn.active { background: rgba(76, 217, 100, 0.5); box-shadow: 0 0 20px rgba(76, 217, 100, 0.4); }
+#xray-btn .xray-charges { position: absolute; top: -4px; right: -4px; background: #f5a623; color: #0a0a12; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+/* ── Bottom Bar ── */
+#bottom-bar { width: 100%; max-width: 420px; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+.infiltrator-count { color: #ff4757; font-size: 12px; }
+.combo-display { color: #f5a623; font-size: 14px; font-weight: 700; min-height: 20px; }
+
+/* ── Dr. RooT Reveal Overlay ── */
+#reveal-overlay { display: none; position: absolute; inset: 0; background: rgba(10,10,18,0.92); flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; z-index: 100; gap: 16px; }
+#reveal-overlay.active { display: flex; }
+.reveal-icon { font-size: 64px; margin-bottom: 8px; }
+.reveal-title { color: #ff4757; font-size: 22px; font-weight: 700; }
+.reveal-subtitle { color: #8888aa; font-size: 14px; }
+.reveal-label { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 16px; width: 100%; max-width: 320px; text-align: left; }
+.reveal-label h4 { color: #ff4757; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.reveal-ingredient { color: #ccc; font-size: 13px; line-height: 1.6; }
+.reveal-ingredient .bad { color: #ff4757; font-weight: 700; }
+.reveal-kip-btn { background: linear-gradient(135deg, #4cd964 0%, #3ab850 100%); color: #0a0a12; border: none; padding: 14px 36px; border-radius: 25px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; letter-spacing: 0.5px; }
+
+/* ── Game Over / Win ── */
+#result-screen { background: #0a0a12; text-align: center; gap: 16px; padding: 32px; }
+#result-screen h2 { font-size: 28px; color: #fff; }
+.clarity-rating { font-size: 64px; color: #f5a623; font-weight: 800; }
+.result-stats { color: #8888aa; font-size: 14px; line-height: 2; }
+.result-stats span { color: #fff; font-weight: 600; }
+.result-message { color: #4cd964; font-size: 15px; font-style: italic; max-width: 300px; line-height: 1.5; }
+
+/* ── Level Select ── */
+#level-screen { background: #0a0a12; gap: 16px; padding: 32px; }
+#level-screen h2 { color: #fff; font-size: 24px; margin-bottom: 8px; }
+.level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 320px; width: 100%; }
+.level-card { background: #1a1a2e; border: 2px solid #2a2a4e; border-radius: 12px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.level-card:hover { border-color: #f5a623; }
+.level-card.locked { opacity: 0.4; pointer-events: none; }
+.level-card .level-num { color: #f5a623; font-size: 24px; font-weight: 800; }
+.level-card .level-name { color: #8888aa; font-size: 11px; margin-top: 4px; }
+.back-link { color: #6a6a8a; font-size: 13px; cursor: pointer; margin-top: 12px; text-decoration: underline; }
+.level-card .level-stars { color: #f5a623; font-size: 14px; margin-top: 4px; letter-spacing: 2px; }
+.level-card .level-desc { color: #6a6a8a; font-size: 10px; margin-top: 2px; }
+
+/* ── Screen Transitions ── */
+.screen { transition: opacity 0.3s ease; opacity: 0; }
+.screen.active { opacity: 1; }
+
+/* ── Score Pop ── */
+.score-pop { position: absolute; color: #f5a623; font-size: 20px; font-weight: 800; pointer-events: none; z-index: 60; animation: pop-up 0.8s ease-out forwards; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+.score-pop.bad { color: #ff4757; }
+@keyframes pop-up { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.3); } }
+
+/* ── Board Shake ── */
+.board-shake { animation: shake 0.4s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 15% { transform: translateX(-6px); } 30% { transform: translateX(5px); } 45% { transform: translateX(-4px); } 60% { transform: translateX(3px); } 75% { transform: translateX(-2px); } }
+
+/* ── Combo Banner ── */
+.combo-display.big { font-size: 22px; animation: combo-flash 0.5s ease; }
+@keyframes combo-flash { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+
+/* ── How To Play Screen ── */
+#howto-screen { background: #0a0a12; padding: 24px 20px; overflow-y: auto; align-items: stretch; justify-content: flex-start; gap: 0; }
+#howto-screen .howto-scroll { width: 100%; max-width: 400px; margin: 0 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.howto-title { color: #fff; font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 20px; }
+.howto-section { background: #12121e; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.howto-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.howto-section h3 .hw-icon { font-size: 22px; }
+.howto-section p { color: #aaa; font-size: 13px; line-height: 1.6; }
+.howto-section .hw-good { color: #4cd964; }
+.howto-section .hw-bad { color: #ff4757; }
+.howto-section .hw-amber { color: #f5a623; }
+.hw-tile-row { display: flex; gap: 8px; margin: 10px 0; justify-content: center; }
+.hw-tile { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; position: relative; }
+.hw-tile.natural { background: linear-gradient(135deg, #4cd964, #3ab850); }
+.hw-tile.hmi { background: linear-gradient(135deg, #7ee89a, #4cd964, #7ee89a); box-shadow: 0 0 10px rgba(126,232,154,0.4); }
+.hw-tile.hmi::after { content: '\2728'; position: absolute; top: -4px; right: -4px; font-size: 12px; }
+.hw-tile.upf { background: #2a1a0a; }
+.hw-tile.xray { background: #1a1a1a; border: 1px solid #ff4757; }
+.hw-keys { display: inline-block; background: #1a1a2e; border: 1px solid #333; border-radius: 6px; padding: 2px 8px; font-size: 12px; color: #f5a623; font-weight: 700; }
+.howto-bottom { text-align: center; padding: 12px 0 24px; }
+.howto-bottom .btn { margin-top: 0; }
+.howto-back { color: #6a6a8a; font-size: 13px; cursor: pointer; text-decoration: underline; text-align: center; display: block; margin-top: 12px; }
+
+/* ── Particle Canvas ── */
+#particle-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TITLE SCREEN ═══════════════ -->
+<div id="title-screen" class="screen active">
+  <h2>ScanSmart presents</h2>
+  <h1><span class="k">K</span><span class="i">i</span><span class="p">P</span></h1>
+  <h2>The Great Infiltration</h2>
+  <p class="subtitle-line">Can you spot what Big Label doesn't want you to see?</p>
+  <button class="btn" onclick="showScreen('level-screen')">Play</button>
+  <button class="btn btn-secondary" onclick="showScreen('howto-screen')">How to Play</button>
+</div>
+
+<!-- ═══════════════ LEVEL SELECT ═══════════════ -->
+<div id="level-screen" class="screen">
+  <h2>Choose Your Mission</h2>
+  <div class="level-grid" id="level-grid"></div>
+  <span class="back-link" onclick="showScreen('title-screen')">Back</span>
+</div>
+
+<!-- ═══════════════ HOW TO PLAY ═══════════════ -->
+<div id="howto-screen" class="screen">
+  <div class="howto-scroll">
+    <div class="howto-title">How to Play</div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#127919;</span> <span class="hw-good">Your Mission</span></h3>
+      <p>Big Label has <span class="hw-bad">infiltrated</span> the food supply with fake "healthy" products. Swipe to match 3+ real foods and score points. Reach the target score before time runs out!</p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#127822;</span> <span class="hw-good">Real Food Tiles</span></h3>
+      <p>Match 3 or more in a row/column to score. These are your allies.</p>
+      <div class="hw-tile-row">
+        <div class="hw-tile natural">&#127822;</div>
+        <div class="hw-tile natural">&#129382;</div>
+        <div class="hw-tile natural">&#127806;</div>
+        <div class="hw-tile natural">&#129365;</div>
+        <div class="hw-tile natural">&#129744;</div>
+      </div>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#9888;&#65039;</span> <span class="hw-bad">HMI Infiltrators</span></h3>
+      <p>These <span class="hw-bad">mimic</span> real food but are ultra-processed fakes. They look <span class="hw-amber">shinier and more appealing</span> than natural tiles. If you match them, you <span class="hw-bad">lose a life</span> and Dr. RooT reveals the real ingredients.</p>
+      <div class="hw-tile-row">
+        <div class="hw-tile natural">&#129382;</div>
+        <div class="hw-tile hmi">&#129382;</div>
+      </div>
+      <p style="text-align:center;margin-top:4px;font-size:11px;"><span class="hw-good">Real</span> &nbsp; vs &nbsp; <span class="hw-bad">Fake (shinier glow &#x2728;)</span></p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#128269;</span> <span class="hw-amber">The Glitch Tell</span></h3>
+      <p>Every <span class="hw-amber">4 seconds</span>, HMI tiles briefly <span class="hw-bad">glitch</span> &#8212; flashing their true form for just 2 frames. Watch carefully! Paying attention is your best weapon.</p>
+      <div class="hw-tile-row">
+        <div class="hw-tile hmi">&#127822;</div>
+        <span style="color:#666;font-size:20px;display:flex;align-items:center;">&#10145;</span>
+        <div class="hw-tile xray">&#9888;&#65039;</div>
+        <span style="color:#666;font-size:20px;display:flex;align-items:center;">&#10145;</span>
+        <div class="hw-tile hmi">&#127822;</div>
+      </div>
+      <p style="text-align:center;font-size:11px;color:#888;">Fake &#8594; Glitch (2 frames) &#8594; Fake again</p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#129489;&#8205;&#128300;</span> <span class="hw-good">X-Ray Lens</span></h3>
+      <p>Tap the <span class="hw-keys">X-RAY</span> button to reveal <span class="hw-bad">all infiltrators</span> for 3 seconds. You get <span class="hw-amber">3 charges per level</span> &#8212; use them wisely!</p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#128128;</span> <span class="hw-bad">UPF Blockers</span></h3>
+      <p>Dark sludge tiles that <span class="hw-bad">can't be matched or moved</span>. Tiles near them feel <span class="hw-amber">heavy and sticky</span> to swipe. They appear from Level 3 onwards.</p>
+      <div class="hw-tile-row">
+        <div class="hw-tile upf">&#128128;</div>
+      </div>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#10084;&#65039;</span> <span class="hw-bad">3 Lives</span></h3>
+      <p>Each life = your <span class="hw-amber">Metabolic Integrity</span>. Lose one every time an HMI fools you. At zero lives, it's game over. Dr. RooT will show you the <span class="hw-bad">real ingredient label</span> of what you just "ate."</p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#9201;&#65039;</span> <span class="hw-amber">The Timer</span></h3>
+      <p>Represents your <span class="hw-amber">attention span</span> in a world of marketing noise. It speeds up in later levels. When it hits 10 seconds, it pulses red.</p>
+    </div>
+
+    <div class="howto-section">
+      <h3><span class="hw-icon">&#127775;</span> <span class="hw-good">Clarity Rating</span></h3>
+      <p>At the end, you're scored on how many infiltrators you <span class="hw-good">avoided</span>, not just your points. Can you reach <span class="hw-amber">100% clarity</span>?</p>
+    </div>
+
+    <div class="howto-bottom">
+      <button class="btn" onclick="showScreen('level-screen')">Got it &#8212; Let's Play!</button>
+      <span class="howto-back" onclick="showScreen('title-screen')">Back</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ GAME SCREEN ═══════════════ -->
+<div id="game-screen" class="screen">
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-lives" id="hud-lives"></div>
+      <span class="hud-score" id="hud-score">0</span>
+    </div>
+    <span class="hud-level" id="hud-level">Level 1</span>
+    <div class="hud-right">
+      <span class="hud-timer" id="hud-timer">60</span>
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="game-canvas"></canvas>
+    <canvas id="particle-canvas"></canvas>
+    <button id="xray-btn" onclick="toggleXRay()">
+      X-RAY
+      <span class="xray-charges" id="xray-charges">3</span>
+    </button>
+  </div>
+
+  <div id="bottom-bar">
+    <span class="infiltrator-count" id="infiltrator-count"></span>
+    <span class="combo-display" id="combo-display"></span>
+  </div>
+
+  <!-- Dr. RooT Reveal -->
+  <div id="reveal-overlay">
+    <div class="reveal-icon" id="reveal-icon"></div>
+    <div class="reveal-title" id="reveal-title"></div>
+    <div class="reveal-subtitle" id="reveal-subtitle"></div>
+    <div class="reveal-label" id="reveal-label"></div>
+    <button class="reveal-kip-btn" onclick="dismissReveal()">Knowledge is Power</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RESULT SCREEN ═══════════════ -->
+<div id="result-screen" class="screen">
+  <h2 id="result-heading"></h2>
+  <div class="clarity-rating" id="clarity-rating"></div>
+  <div class="result-stats" id="result-stats"></div>
+  <p class="result-message" id="result-message"></p>
+  <button class="btn" onclick="replayLevel()">Play Again</button>
+  <button class="btn btn-secondary" onclick="showScreen('level-screen')">Levels</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  KiP: THE GREAT INFILTRATION - Game Engine
+//  ScanSmart Ltd 2026
+// ═══════════════════════════════════════════════════
+
+// ── Constants ──
+const COLS = 7, ROWS = 8;
+const TILE_GAP = 4;
+const MATCH_MIN = 3;
+const GLITCH_INTERVAL = 4000;   // ms between HMI glitch frames
+const GLITCH_DURATION = 80;     // ms the glitch is visible (approx 2 frames at 60fps)
+const XRAY_DURATION = 3000;     // ms X-Ray lens stays active
+
+// ── Tile Types ──
+const TILE = {
+  EMPTY: 0,
+  // Natural tiles (safe to match)
+  APPLE: 1, BROCCOLI: 2, GRAIN: 3, CARROT: 4, BLUEBERRY: 5,
+  // HMI Mimics (look like naturals, cause damage)
+  HMI_APPLE: 11, HMI_BROCCOLI: 12, HMI_GRAIN: 13, HMI_CARROT: 14, HMI_BLUEBERRY: 15,
+  // UPF Blockers (cause friction, cannot be matched)
+  UPF_BLOCKER: 20
+};
+
+const NATURAL_TILES = [TILE.APPLE, TILE.BROCCOLI, TILE.GRAIN, TILE.CARROT, TILE.BLUEBERRY];
+const HMI_TILES = [TILE.HMI_APPLE, TILE.HMI_BROCCOLI, TILE.HMI_GRAIN, TILE.HMI_CARROT, TILE.HMI_BLUEBERRY];
+
+// Map HMI to the natural tile it mimics
+function hmiToNatural(t) { return t - 10; }
+function isHMI(t) { return t >= 11 && t <= 15; }
+function isNatural(t) { return t >= 1 && t <= 5; }
+function isUPF(t) { return t === TILE.UPF_BLOCKER; }
+function visualType(t) { return isHMI(t) ? hmiToNatural(t) : t; }
+
+// ── Tile Visuals ──
+const TILE_VISUALS = {
+  [TILE.APPLE]:     { emoji: '\u{1F34E}', name: 'Apple',      color: '#ff6b6b', halo: '#ff9a9a' },
+  [TILE.BROCCOLI]:  { emoji: '\u{1F966}', name: 'Broccoli',   color: '#4cd964', halo: '#7ee89a' },
+  [TILE.GRAIN]:     { emoji: '\u{1F33E}', name: 'Whole Grain', color: '#f5a623', halo: '#f7c56e' },
+  [TILE.CARROT]:    { emoji: '\u{1F955}', name: 'Carrot',      color: '#ff9f43', halo: '#ffbe76' },
+  [TILE.BLUEBERRY]: { emoji: '\u{1FAD0}', name: 'Blueberry',   color: '#7c5cbf', halo: '#a88fd4' },
+};
+
+// ── HMI "Ingredient Labels" for Dr. RooT reveals ──
+const HMI_REVEALS = {
+  [TILE.HMI_APPLE]: {
+    product: '"Fruity Apple Bites"',
+    tagline: 'Made with Real Fruit!',
+    ingredients: '<span class="bad">High Fructose Corn Syrup</span>, Dextrose, Apple Puree Concentrate (4%), <span class="bad">Maltodextrin</span>, Citric Acid, <span class="bad">Red 40</span>, Natural and Artificial Flavours, Carnauba Wax',
+    truth: 'Only 4% real apple. The rest is sugar and chemicals wearing a fruit costume.'
+  },
+  [TILE.HMI_BROCCOLI]: {
+    product: '"Veggie Power Crisps"',
+    tagline: 'Packed with Greens!',
+    ingredients: 'Corn Starch, Sunflower Oil, <span class="bad">Maltodextrin</span>, Broccoli Powder (2%), Salt, <span class="bad">Monosodium Glutamate</span>, Yeast Extract, <span class="bad">Disodium Inosinate</span>, Natural Flavour',
+    truth: '2% broccoli powder. It\'s a corn crisp with a green label.'
+  },
+  [TILE.HMI_GRAIN]: {
+    product: '"Wholesome Grain Bar"',
+    tagline: 'Heart-Healthy Whole Grains!',
+    ingredients: '<span class="bad">Sugar</span>, Rice Flour, <span class="bad">Palm Oil</span>, Oat Flakes (8%), <span class="bad">Glucose Syrup</span>, Honey, <span class="bad">Invert Sugar Syrup</span>, Salt, Emulsifier (Soy Lecithin)',
+    truth: 'Three different types of sugar before you even reach the oats.'
+  },
+  [TILE.HMI_CARROT]: {
+    product: '"Garden Veggie Straws"',
+    tagline: 'Sensible Snacking!',
+    ingredients: 'Potato Starch, <span class="bad">Vegetable Oil Blend</span>, Potato Flour, Carrot Powder (1.5%), <span class="bad">Dextrose</span>, Salt, Tomato Paste, Spinach Powder (0.3%), <span class="bad">Maltodextrin</span>',
+    truth: 'Potato starch with 1.5% carrot powder. It\'s a chip pretending to be a vegetable.'
+  },
+  [TILE.HMI_BLUEBERRY]: {
+    product: '"Blueberry Blast Muffin"',
+    tagline: 'Bursting with Blueberries!',
+    ingredients: 'Enriched Flour, <span class="bad">Sugar</span>, <span class="bad">Soybean Oil</span>, Water, <span class="bad">Dextrose</span>, Modified Corn Starch, <span class="bad">Blue 1</span>, <span class="bad">Red 40</span>, Artificial Blueberry Flavour, Citric Acid',
+    truth: 'Zero real blueberries. The "berries" are dyed sugar lumps.'
+  }
+};
+
+// ── Level Definitions ──
+const LEVELS = [
+  { name: 'Fresh Start',      time: 75, hmiChance: 0.08, upfCount: 0,  targetScore: 500,  desc: 'Learn to spot the fakes' },
+  { name: 'Label Lies',       time: 70, hmiChance: 0.12, upfCount: 2,  targetScore: 800,  desc: 'HMI mimics get bolder' },
+  { name: 'Aisle of Deceit',  time: 65, hmiChance: 0.15, upfCount: 4,  targetScore: 1200, desc: 'UPF blockers appear' },
+  { name: 'The Sugar Trap',   time: 60, hmiChance: 0.18, upfCount: 6,  targetScore: 1600, desc: 'Sugar hides everywhere' },
+  { name: 'Marketing Storm',  time: 55, hmiChance: 0.22, upfCount: 8,  targetScore: 2000, desc: 'Claims flood the board' },
+  { name: 'Big Label\'s Lair', time: 50, hmiChance: 0.25, upfCount: 10, targetScore: 2500, desc: 'The final deception' },
+];
+
+// ── Game State ──
+let canvas, ctx;
+let tileSize, boardX, boardY;
+let board = [];
+let selected = null;      // {row, col}
+let swapTarget = null;
+let animating = false;
+let lives = 3;
+let score = 0;
+let timer = 60;
+let timerInterval = null;
+let comboCount = 0;
+let currentLevel = 0;
+let hmiCaught = 0;        // HMI tiles the player avoided (correctly did NOT match)
+let hmiMatched = 0;       // HMI tiles the player fell for
+let totalHMISpawned = 0;
+let xrayActive = false;
+let xrayCharges = 3;
+let xrayTimeout = null;
+let glitchPhase = 0;      // 0 = normal, 1 = glitch visible
+let lastGlitchTime = 0;
+let tutorialStep = -1;
+let gameActive = false;
+let touchStartX = 0, touchStartY = 0;
+let swipeThreshold = 20;
+
+// ── Screen Management ──
+function showScreen(id) {
+  // Stop game loop and timer if navigating away from game screen
+  if (id !== 'game-screen' && gameActive) {
+    gameActive = false;
+    clearInterval(timerInterval);
+  }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'level-screen') buildLevelGrid();
+}
+
+function buildLevelGrid() {
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
+  const unlocked = parseInt(localStorage.getItem('kip_unlocked') || '1');
+  LEVELS.forEach((lv, i) => {
+    const card = document.createElement('div');
+    const locked = i + 1 > unlocked;
+    card.className = 'level-card' + (locked ? ' locked' : '');
+    const best = parseInt(localStorage.getItem(`kip_best_${i}`) || '0');
+    const stars = best >= 95 ? '\u2605\u2605\u2605' : best >= 75 ? '\u2605\u2605\u2606' : best >= 50 ? '\u2605\u2606\u2606' : (best > 0 ? '\u2606\u2606\u2606' : '');
+    card.innerHTML = `<div class="level-num">${locked ? '\u{1F512}' : i + 1}</div><div class="level-name">${lv.name}</div>${stars ? `<div class="level-stars">${stars}</div>` : ''}<div class="level-desc">${lv.desc}</div>`;
+    if (!locked) card.onclick = () => startLevel(i);
+    grid.appendChild(card);
+  });
+}
+
+// ── Canvas Setup ──
+function initCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('canvas-wrap');
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+
+  const availW = rect.width - (COLS + 1) * TILE_GAP;
+  const availH = rect.height - (ROWS + 1) * TILE_GAP;
+  tileSize = Math.floor(Math.min(availW / COLS, availH / ROWS));
+  boardX = Math.floor((rect.width - (COLS * tileSize + (COLS + 1) * TILE_GAP)) / 2);
+  boardY = Math.floor((rect.height - (ROWS * tileSize + (ROWS + 1) * TILE_GAP)) / 2);
+}
+
+// ── Board Generation ──
+function generateBoard() {
+  const lv = LEVELS[currentLevel];
+  board = [];
+  totalHMISpawned = 0;
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      board[r][c] = spawnTile(lv);
+    }
+  }
+  // Place UPF blockers
+  let placed = 0;
+  while (placed < lv.upfCount) {
+    const r = Math.floor(Math.random() * ROWS);
+    const c = Math.floor(Math.random() * COLS);
+    if (!isUPF(board[r][c])) {
+      board[r][c] = TILE.UPF_BLOCKER;
+      placed++;
+    }
+  }
+  // Remove initial matches
+  removeInitialMatches(lv);
+}
+
+function spawnTile(lv) {
+  if (Math.random() < lv.hmiChance) {
+    totalHMISpawned++;
+    return HMI_TILES[Math.floor(Math.random() * HMI_TILES.length)];
+  }
+  return NATURAL_TILES[Math.floor(Math.random() * NATURAL_TILES.length)];
+}
+
+function removeInitialMatches(lv) {
+  let changed = true;
+  let safety = 0;
+  while (changed && safety < 50) {
+    changed = false;
+    safety++;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (isUPF(board[r][c]) || board[r][c] === TILE.EMPTY) continue;
+        // Check horizontal
+        if (c + 2 < COLS && visualType(board[r][c]) === visualType(board[r][c+1]) && visualType(board[r][c]) === visualType(board[r][c+2])) {
+          if (isHMI(board[r][c])) totalHMISpawned--; // Correct count for replaced HMI
+          board[r][c] = NATURAL_TILES[Math.floor(Math.random() * NATURAL_TILES.length)];
+          changed = true;
+        }
+        // Check vertical
+        if (r + 2 < ROWS && visualType(board[r][c]) === visualType(board[r+1][c]) && visualType(board[r][c]) === visualType(board[r+2][c])) {
+          if (isHMI(board[r][c])) totalHMISpawned--; // Correct count for replaced HMI
+          board[r][c] = NATURAL_TILES[Math.floor(Math.random() * NATURAL_TILES.length)];
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
+// ── Start Level ──
+function startLevel(levelIndex) {
+  currentLevel = levelIndex;
+  const lv = LEVELS[currentLevel];
+  lives = 3;
+  score = 0;
+  timer = lv.time;
+  comboCount = 0;
+  hmiCaught = 0;
+  hmiMatched = 0;
+  totalHMISpawned = 0;
+  xrayCharges = 3;
+  xrayActive = false;
+  clearTimeout(xrayTimeout);
+  selected = null;
+  animating = false;
+  gameActive = true;
+
+  showScreen('game-screen');
+  initCanvas();
+  initParticles();
+  generateBoard();
+  updateHUD();
+  startTimer();
+  lastGlitchTime = performance.now();
+  SFX.levelStart();
+  requestAnimationFrame(gameLoop);
+}
+
+// ── Timer ──
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!gameActive) return;
+    timer--;
+    updateTimerDisplay();
+    if (timer <= 10 && timer > 0) SFX.timerTick();
+    if (timer <= 0) {
+      gameActive = false;
+      clearInterval(timerInterval);
+      endGame(false);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('hud-timer');
+  el.textContent = timer;
+  el.classList.toggle('urgent', timer <= 10);
+}
+
+// ── HUD ──
+function updateHUD() {
+  // Lives
+  const livesEl = document.getElementById('hud-lives');
+  livesEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    livesEl.innerHTML += `<svg class="hud-heart ${i >= lives ? 'lost' : ''}" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+  }
+  // Score
+  document.getElementById('hud-score').textContent = score;
+  // Level
+  document.getElementById('hud-level').textContent = `Level ${currentLevel + 1}`;
+  // Timer
+  updateTimerDisplay();
+  // X-Ray
+  document.getElementById('xray-charges').textContent = xrayCharges;
+  // Infiltrator count
+  const inf = document.getElementById('infiltrator-count');
+  if (totalHMISpawned > 0) {
+    inf.textContent = `Infiltrators: ${hmiMatched} caught you / ${totalHMISpawned} spawned`;
+  } else {
+    inf.textContent = '';
+  }
+}
+
+// ── Tile Coordinates ──
+function tileX(col) { return boardX + TILE_GAP + col * (tileSize + TILE_GAP); }
+function tileY(row) { return boardY + TILE_GAP + row * (tileSize + TILE_GAP); }
+
+function getTileAt(px, py) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = tileX(c), y = tileY(r);
+      if (px >= x && px < x + tileSize && py >= y && py < y + tileSize) {
+        return { row: r, col: c };
+      }
+    }
+  }
+  return null;
+}
+
+// ── Drawing ──
+function drawBoard(timestamp) {
+  const w = canvas.width / devicePixelRatio;
+  const h = canvas.height / devicePixelRatio;
+  ctx.clearRect(0, 0, w, h);
+
+  // Board background
+  ctx.fillStyle = '#12121e';
+  ctx.beginPath();
+  ctx.roundRect(boardX, boardY,
+    COLS * tileSize + (COLS + 1) * TILE_GAP,
+    ROWS * tileSize + (ROWS + 1) * TILE_GAP, 12);
+  ctx.fill();
+
+  // Update glitch phase
+  const elapsed = timestamp - lastGlitchTime;
+  if (elapsed >= GLITCH_INTERVAL + GLITCH_DURATION) {
+    lastGlitchTime = timestamp;
+    glitchPhase = 0;
+  } else if (elapsed >= GLITCH_INTERVAL) {
+    glitchPhase = 1; // Glitch visible!
+  } else {
+    glitchPhase = 0;
+  }
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const t = board[r][c];
+      if (t === TILE.EMPTY) continue;
+      const x = tileX(c);
+      const y = tileY(r) + getTileOffset(r, c);
+      drawTile(x, y, t, r, c, timestamp);
+    }
+  }
+
+  // Selection highlight
+  if (selected) {
+    const sx = tileX(selected.col);
+    const sy = tileY(selected.row);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(sx - 2, sy - 2, tileSize + 4, tileSize + 4, 10);
+    ctx.stroke();
+  }
+}
+
+function drawTile(x, y, type, row, col, timestamp) {
+  const isHmi = isHMI(type);
+  const isUpf = isUPF(type);
+  const showTrue = (isHmi && xrayActive) || (isHmi && glitchPhase === 1);
+  const vis = isUpf ? null : TILE_VISUALS[isHmi ? hmiToNatural(type) : type];
+
+  if (isUpf) {
+    // UPF Blocker: dark sludge tile
+    ctx.fillStyle = '#2a1a0a';
+    ctx.beginPath();
+    ctx.roundRect(x, y, tileSize, tileSize, 8);
+    ctx.fill();
+    // Sludge pattern
+    ctx.fillStyle = '#3d2510';
+    for (let i = 0; i < 4; i++) {
+      const bx = x + 6 + (i * (tileSize - 12) / 3);
+      const by = y + tileSize * 0.3 + Math.sin(i * 2 + timestamp * 0.001) * 4;
+      ctx.beginPath();
+      ctx.arc(bx, by, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Label
+    ctx.fillStyle = '#664422';
+    ctx.font = `bold ${tileSize * 0.22}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('UPF', x + tileSize / 2, y + tileSize * 0.7);
+    // Skull emoji
+    ctx.font = `${tileSize * 0.4}px system-ui`;
+    ctx.fillText('\u{1F480}', x + tileSize / 2, y + tileSize * 0.35);
+    return;
+  }
+
+  if (!vis) return;
+
+  if (showTrue) {
+    // ── X-RAY / GLITCH: Show synthetic truth ──
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.roundRect(x, y, tileSize, tileSize, 8);
+    ctx.fill();
+    // Scanline effect
+    ctx.strokeStyle = 'rgba(255,0,0,0.15)';
+    ctx.lineWidth = 1;
+    for (let sy = y; sy < y + tileSize; sy += 3) {
+      ctx.beginPath();
+      ctx.moveTo(x, sy);
+      ctx.lineTo(x + tileSize, sy);
+      ctx.stroke();
+    }
+    // Warning triangle
+    ctx.font = `${tileSize * 0.35}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ff4757';
+    ctx.fillText('\u26A0\uFE0F', x + tileSize / 2, y + tileSize * 0.38);
+    // "HMI" label
+    ctx.fillStyle = '#ff4757';
+    ctx.font = `bold ${tileSize * 0.2}px system-ui`;
+    ctx.fillText('HMI', x + tileSize / 2, y + tileSize * 0.72);
+    return;
+  }
+
+  // ── Normal rendering ──
+  // Background
+  const gradient = ctx.createLinearGradient(x, y, x + tileSize, y + tileSize);
+  if (isHmi) {
+    // Health Halo: shinier, more "rewarding" gradient
+    gradient.addColorStop(0, vis.halo);
+    gradient.addColorStop(0.5, vis.color);
+    gradient.addColorStop(1, vis.halo);
+    // Outer glow
+    ctx.shadowColor = vis.halo;
+    ctx.shadowBlur = 10;
+  } else {
+    gradient.addColorStop(0, vis.color);
+    gradient.addColorStop(1, shadeColor(vis.color, -25));
+  }
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(x, y, tileSize, tileSize, 8);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // HMI shimmer overlay
+  if (isHmi) {
+    const shimmer = (Math.sin(timestamp * 0.003 + row + col) + 1) * 0.15;
+    ctx.fillStyle = `rgba(255,255,255,${shimmer})`;
+    ctx.beginPath();
+    ctx.roundRect(x, y, tileSize, tileSize, 8);
+    ctx.fill();
+  }
+
+  // Emoji
+  ctx.font = `${tileSize * 0.5}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(vis.emoji, x + tileSize / 2, y + tileSize / 2);
+}
+
+function shadeColor(color, percent) {
+  const num = parseInt(color.slice(1), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + percent));
+  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + percent));
+  return `rgb(${r},${g},${b})`;
+}
+
+// ── Game Loop ──
+function gameLoop(timestamp) {
+  if (!gameActive && !animating) return;
+  drawBoard(timestamp);
+  updateTileOffsets();
+  updateParticles();
+  requestAnimationFrame(gameLoop);
+}
+
+// ── Input Handling ──
+canvas = document.getElementById('game-canvas');
+
+function handlePointerDown(px, py) {
+  if (animating || !gameActive) return;
+  const tile = getTileAt(px, py);
+  if (!tile) return;
+  if (isUPF(board[tile.row][tile.col])) return; // Can't select UPF
+
+  touchStartX = px;
+  touchStartY = py;
+
+  if (!selected) {
+    selected = tile;
+    SFX.select();
+  } else if (selected.row === tile.row && selected.col === tile.col) {
+    selected = null;
+  } else if (isAdjacent(selected, tile)) {
+    SFX.swap();
+    trySwap(selected, tile);
+  } else {
+    selected = tile;
+    SFX.select();
+  }
+}
+
+function handlePointerMove(px, py) {
+  if (!selected || animating || !gameActive) return;
+  const dx = px - touchStartX;
+  const dy = py - touchStartY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist > swipeThreshold) {
+    let targetRow = selected.row;
+    let targetCol = selected.col;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      targetCol += dx > 0 ? 1 : -1;
+    } else {
+      targetRow += dy > 0 ? 1 : -1;
+    }
+    if (targetRow >= 0 && targetRow < ROWS && targetCol >= 0 && targetCol < COLS) {
+      const target = { row: targetRow, col: targetCol };
+      if (!isUPF(board[target.row][target.col])) {
+        const from = selected;
+        selected = null; // Prevent double-swap race condition
+        animating = true;
+        trySwap(from, target);
+      }
+    }
+    touchStartX = px;
+    touchStartY = py;
+  }
+}
+
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+document.getElementById('game-canvas').addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const { x, y } = getCanvasCoords(e);
+  handlePointerDown(x, y);
+});
+
+document.getElementById('game-canvas').addEventListener('pointermove', e => {
+  e.preventDefault();
+  const { x, y } = getCanvasCoords(e);
+  handlePointerMove(x, y);
+});
+
+function isAdjacent(a, b) {
+  return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
+}
+
+// ── UPF Friction: check adjacency to UPF blockers ──
+function isNearUPF(row, col) {
+  const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+  for (const [dr, dc] of dirs) {
+    const nr = row + dr, nc = col + dc;
+    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && isUPF(board[nr][nc])) return true;
+  }
+  return false;
+}
+
+// ── Swap & Match Logic ──
+async function trySwap(a, b) {
+  animating = true;
+  selected = null;
+
+  // UPF friction: add delay if near a blocker (the "sludge" feel)
+  if (isNearUPF(a.row, a.col) || isNearUPF(b.row, b.col)) {
+    // Haptic feedback on mobile
+    if (navigator.vibrate) navigator.vibrate(50);
+    await sleep(200); // Sluggish delay
+  }
+
+  // Swap
+  swap(a, b);
+
+  // Check for matches
+  const matches = findMatches();
+  if (matches.length === 0) {
+    // Swap back
+    SFX.invalidSwap();
+    await sleep(200);
+    swap(a, b);
+    animating = false;
+    return;
+  }
+
+  // Process matches
+  comboCount = 0;
+  await processMatches(matches);
+  animating = false;
+}
+
+function swap(a, b) {
+  const tmp = board[a.row][a.col];
+  board[a.row][a.col] = board[b.row][b.col];
+  board[b.row][b.col] = tmp;
+}
+
+function findMatches() {
+  const matched = new Set();
+
+  // Horizontal
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c <= COLS - MATCH_MIN; c++) {
+      const t = board[r][c];
+      if (t === TILE.EMPTY || isUPF(t)) continue;
+      const vt = visualType(t);
+      let len = 1;
+      while (c + len < COLS && visualType(board[r][c + len]) === vt) len++;
+      if (len >= MATCH_MIN) {
+        for (let i = 0; i < len; i++) matched.add(`${r},${c + i}`);
+      }
+    }
+  }
+  // Vertical
+  for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r <= ROWS - MATCH_MIN; r++) {
+      const t = board[r][c];
+      if (t === TILE.EMPTY || isUPF(t)) continue;
+      const vt = visualType(t);
+      let len = 1;
+      while (r + len < ROWS && visualType(board[r + len][c]) === vt) len++;
+      if (len >= MATCH_MIN) {
+        for (let i = 0; i < len; i++) matched.add(`${r + i},${c}`);
+      }
+    }
+  }
+
+  return [...matched].map(s => {
+    const [r, c] = s.split(',').map(Number);
+    return { row: r, col: c, type: board[r][c] };
+  });
+}
+
+async function processMatches(matches) {
+  while (matches.length > 0) {
+    if (!gameActive) return; // Guard against timer ending mid-cascade
+    comboCount++;
+    let hmiInMatch = false;
+    let hmiTileType = null;
+    let pointsThisRound = 0;
+
+    for (const m of matches) {
+      if (isHMI(m.type)) {
+        hmiInMatch = true;
+        hmiTileType = m.type;
+      } else if (isNatural(m.type)) {
+        pointsThisRound += 10 * comboCount;
+      }
+      // Spawn particles at cleared tile position
+      const px = tileX(m.col) + tileSize / 2;
+      const py = tileY(m.row) + tileSize / 2;
+      const vis = TILE_VISUALS[isHMI(m.type) ? hmiToNatural(m.type) : m.type];
+      if (vis) spawnParticles(px, py, isHMI(m.type) ? '#ff4757' : vis.color, isHMI(m.type) ? 12 : 6);
+      board[m.row][m.col] = TILE.EMPTY;
+    }
+
+    if (hmiInMatch && comboCount <= 1) {
+      // Player matched an HMI! Lose a life, show Dr. RooT reveal
+      // Only penalise on direct matches (comboCount 1), not cascades
+      hmiMatched++;
+      lives--;
+      SFX.hmiCatch();
+      shakeBoard();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      // Show floating damage text
+      if (matches.length > 0) {
+        const m0 = matches[0];
+        showScorePop(tileX(m0.col), tileY(m0.row), '-1 LIFE', true);
+      }
+      updateHUD();
+
+      // Show reveal
+      await showDrRootReveal(hmiTileType);
+
+      if (lives <= 0) {
+        gameActive = false;
+        clearInterval(timerInterval);
+        endGame(false);
+        return;
+      }
+    } else if (hmiInMatch && comboCount > 1) {
+      // Cascade-spawned HMI match — clear tiles but don't penalise the player
+      SFX.match(comboCount);
+      updateHUD();
+    } else {
+      SFX.match(comboCount);
+      score += pointsThisRound;
+      updateHUD();
+      showCombo(comboCount);
+      // Show floating score text
+      if (matches.length > 0) {
+        const m0 = matches[0];
+        showScorePop(tileX(m0.col), tileY(m0.row), `+${pointsThisRound}`, false);
+        if (comboCount >= 2) spawnStarBurst(tileX(m0.col) + tileSize/2, tileY(m0.row) + tileSize/2);
+      }
+    }
+
+    // Gravity: drop tiles down
+    await sleep(150);
+    applyGravity();
+    await sleep(150);
+
+    // Check for cascading matches
+    matches = findMatches();
+  }
+
+  // Check win condition
+  if (!gameActive) return;
+  if (score >= LEVELS[currentLevel].targetScore) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    endGame(true);
+  }
+}
+
+function applyGravity() {
+  const lv = LEVELS[currentLevel];
+  for (let c = 0; c < COLS; c++) {
+    let writeRow = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (isUPF(board[r][c])) {
+        // UPF blockers don't move
+        if (writeRow !== r) {
+          // Tiles can't fall past UPF blockers — fill above
+        }
+        writeRow = r - 1;
+        continue;
+      }
+      if (board[r][c] !== TILE.EMPTY) {
+        if (writeRow !== r) {
+          board[writeRow][c] = board[r][c];
+          board[r][c] = TILE.EMPTY;
+        }
+        writeRow--;
+      }
+    }
+    // Fill empty spaces at top
+    while (writeRow >= 0) {
+      if (!isUPF(board[writeRow][c])) {
+        board[writeRow][c] = spawnTile(lv);
+      }
+      writeRow--;
+    }
+  }
+}
+
+function showCombo(count) {
+  const el = document.getElementById('combo-display');
+  if (count >= 2) {
+    el.textContent = `${count}x COMBO!`;
+    el.classList.add('big');
+    setTimeout(() => { el.textContent = ''; el.classList.remove('big'); }, 1200);
+  }
+}
+
+// ── Dr. RooT Reveal ──
+function showDrRootReveal(hmiType) {
+  return new Promise(resolve => {
+    const data = HMI_REVEALS[hmiType];
+    if (!data) { resolve(); return; }
+
+    document.getElementById('reveal-icon').textContent = '\u{1F9D1}\u200D\u{1F52C}'; // Dr. RooT
+    document.getElementById('reveal-title').textContent = 'INFILTRATOR DETECTED!';
+    document.getElementById('reveal-subtitle').textContent = `You matched ${data.product} \u2014 but look at the label:`;
+    document.getElementById('reveal-label').innerHTML = `
+      <h4>${data.tagline}</h4>
+      <p class="reveal-ingredient">${data.ingredients}</p>
+      <p style="color:#ff4757;margin-top:10px;font-size:12px;font-style:italic">${data.truth}</p>
+    `;
+    document.getElementById('reveal-overlay').classList.add('active');
+    clearInterval(timerInterval); // Pause timer during educational reveal
+    window._revealResolve = resolve;
+  });
+}
+
+function dismissReveal() {
+  SFX.kipButton();
+  document.getElementById('reveal-overlay').classList.remove('active');
+  if (gameActive) startTimer(); // Resume timer after reveal dismissed
+  if (window._revealResolve) {
+    window._revealResolve();
+    window._revealResolve = null;
+  }
+}
+
+// ── X-Ray Lens ──
+function toggleXRay() {
+  if (xrayCharges <= 0 || xrayActive) return;
+  xrayCharges--;
+  xrayActive = true;
+  document.getElementById('xray-btn').classList.add('active');
+  document.getElementById('xray-charges').textContent = xrayCharges;
+  SFX.xray();
+  if (navigator.vibrate) navigator.vibrate(30);
+
+  clearTimeout(xrayTimeout);
+  xrayTimeout = setTimeout(() => {
+    xrayActive = false;
+    document.getElementById('xray-btn').classList.remove('active');
+  }, XRAY_DURATION);
+}
+
+// ── End Game ──
+function endGame(won) {
+  const lv = LEVELS[currentLevel];
+  const detected = totalHMISpawned - hmiMatched;
+  const clarityPct = totalHMISpawned > 0 ? Math.round((detected / totalHMISpawned) * 100) : 100;
+
+  if (won) {
+    SFX.victory();
+    // Unlock next level
+    const unlocked = parseInt(localStorage.getItem('kip_unlocked') || '1');
+    if (currentLevel + 2 > unlocked) {
+      localStorage.setItem('kip_unlocked', String(currentLevel + 2));
+    }
+    // Save best clarity for star rating
+    const bestKey = `kip_best_${currentLevel}`;
+    const prev = parseInt(localStorage.getItem(bestKey) || '0');
+    if (clarityPct > prev) localStorage.setItem(bestKey, String(clarityPct));
+  } else {
+    SFX.gameOver();
+  }
+
+  document.getElementById('result-heading').textContent = won ? 'CLARITY ACHIEVED' : (lives <= 0 ? 'METABOLIC FAILURE' : 'TIME\'S UP');
+  document.getElementById('clarity-rating').textContent = `${clarityPct}%`;
+  document.getElementById('result-stats').innerHTML = `
+    Score: <span>${score}</span> / ${lv.targetScore}<br>
+    Lives remaining: <span>${lives}</span><br>
+    Infiltrators detected: <span>${detected}</span> / ${totalHMISpawned}<br>
+    Infiltrators that caught you: <span>${hmiMatched}</span>
+  `;
+
+  let msg = '';
+  if (clarityPct >= 95) msg = 'Now you see what they didn\'t want you to see. Knowledge is Power.';
+  else if (clarityPct >= 75) msg = 'Your eyes are opening. Big Label\'s tricks are losing their power.';
+  else if (clarityPct >= 50) msg = 'You\'re learning, but the labels still have secrets. Keep scanning.';
+  else msg = 'Big Label is winning. Train your eyes. Read every label. Knowledge is Power.';
+  document.getElementById('result-message').textContent = msg;
+
+  showScreen('result-screen');
+}
+
+function replayLevel() {
+  startLevel(currentLevel);
+}
+
+// ── Tutorial ──
+function startTutorial() {
+  startLevel(0);
+  // We'll overlay tutorial tips during gameplay
+  // For now, just start level 1 with a gentle config
+}
+
+// ── Utility ──
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Round Rect Polyfill ──
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    this.moveTo(x + r.tl, y);
+    this.lineTo(x + w - r.tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    this.lineTo(x + w, y + h - r.br);
+    this.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    this.lineTo(x + r.bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    this.lineTo(x, y + r.tl);
+    this.quadraticCurveTo(x, y, x + r.tl, y);
+    this.closePath();
+    return this;
+  };
+}
+
+// ═══════════════════════════════════════════════════
+//  POLISH LAYER: Sound, Particles, Animations
+// ═══════════════════════════════════════════════════
+
+// ── Web Audio Sound Engine ──
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.15) {
+  try {
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+const SFX = {
+  select() { playTone(440, 0.08, 'sine', 0.1); },
+  swap() { playTone(523, 0.06, 'sine', 0.08); playTone(659, 0.06, 'sine', 0.08); },
+  match(combo) {
+    const base = 440 + (combo * 80);
+    playTone(base, 0.12, 'sine', 0.12);
+    setTimeout(() => playTone(base * 1.25, 0.12, 'sine', 0.1), 60);
+    setTimeout(() => playTone(base * 1.5, 0.15, 'sine', 0.08), 120);
+  },
+  hmiCatch() {
+    playTone(200, 0.3, 'sawtooth', 0.15);
+    setTimeout(() => playTone(150, 0.4, 'sawtooth', 0.12), 100);
+  },
+  xray() {
+    playTone(880, 0.05, 'sine', 0.1);
+    setTimeout(() => playTone(1100, 0.05, 'sine', 0.08), 50);
+    setTimeout(() => playTone(1320, 0.08, 'sine', 0.06), 100);
+  },
+  invalidSwap() { playTone(200, 0.15, 'square', 0.06); },
+  kipButton() {
+    playTone(523, 0.1, 'sine', 0.1);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.1), 80);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.1), 160);
+  },
+  timerTick() { playTone(800, 0.03, 'sine', 0.04); },
+  gameOver() {
+    playTone(400, 0.2, 'sawtooth', 0.1);
+    setTimeout(() => playTone(300, 0.2, 'sawtooth', 0.1), 200);
+    setTimeout(() => playTone(200, 0.4, 'sawtooth', 0.1), 400);
+  },
+  victory() {
+    [523, 659, 784, 1047].forEach((f, i) => {
+      setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 120);
+    });
+  },
+  levelStart() {
+    playTone(330, 0.1, 'sine', 0.08);
+    setTimeout(() => playTone(440, 0.1, 'sine', 0.08), 100);
+    setTimeout(() => playTone(550, 0.15, 'sine', 0.08), 200);
+  }
+};
+
+// ── Particle System ──
+let particles = [];
+let particleCanvas, particleCtx;
+
+function initParticles() {
+  particleCanvas = document.getElementById('particle-canvas');
+  if (!particleCanvas) return;
+  const wrap = document.getElementById('canvas-wrap');
+  const rect = wrap.getBoundingClientRect();
+  particleCanvas.width = rect.width * devicePixelRatio;
+  particleCanvas.height = rect.height * devicePixelRatio;
+  particleCtx = particleCanvas.getContext('2d');
+  particleCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  particleCanvas.style.width = rect.width + 'px';
+  particleCanvas.style.height = rect.height + 'px';
+  particles = [];
+}
+
+function spawnParticles(cx, cy, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+    const speed = 1.5 + Math.random() * 3;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      size: 3 + Math.random() * 4,
+      color: color,
+      life: 1.0,
+      decay: 0.02 + Math.random() * 0.02
+    });
+  }
+}
+
+function spawnStarBurst(cx, cy, count = 12) {
+  const colors = ['#f5a623', '#4cd964', '#ff6b6b', '#7c5cbf', '#ff9f43'];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i;
+    const speed = 2 + Math.random() * 4;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      size: 2 + Math.random() * 3,
+      color: colors[i % colors.length],
+      life: 1.0,
+      decay: 0.015 + Math.random() * 0.015,
+      star: true
+    });
+  }
+}
+
+function updateParticles() {
+  if (!particleCtx) return;
+  const w = particleCanvas.width / devicePixelRatio;
+  const h = particleCanvas.height / devicePixelRatio;
+  particleCtx.clearRect(0, 0, w, h);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.08; // gravity
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+    particleCtx.globalAlpha = p.life;
+    particleCtx.fillStyle = p.color;
+
+    if (p.star) {
+      // Draw tiny star
+      drawStar(particleCtx, p.x, p.y, p.size, p.size * 0.4);
+    } else {
+      particleCtx.beginPath();
+      particleCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      particleCtx.fill();
+    }
+  }
+  particleCtx.globalAlpha = 1;
+}
+
+function drawStar(ctx, cx, cy, outerR, innerR) {
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+    const x = cx + Math.cos(angle) * outerR;
+    const y = cy + Math.sin(angle) * outerR;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    const innerAngle = angle + Math.PI / 5;
+    ctx.lineTo(cx + Math.cos(innerAngle) * innerR, cy + Math.sin(innerAngle) * innerR);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ── Score Pop Floating Text ──
+function showScorePop(x, y, text, isBad) {
+  const pop = document.createElement('div');
+  pop.className = 'score-pop' + (isBad ? ' bad' : '');
+  pop.textContent = text;
+  pop.style.left = x + 'px';
+  pop.style.top = y + 'px';
+  document.getElementById('canvas-wrap').appendChild(pop);
+  setTimeout(() => pop.remove(), 800);
+}
+
+// ── Board Shake ──
+function shakeBoard() {
+  const wrap = document.getElementById('canvas-wrap');
+  wrap.classList.remove('board-shake');
+  void wrap.offsetWidth; // force reflow
+  wrap.classList.add('board-shake');
+  setTimeout(() => wrap.classList.remove('board-shake'), 400);
+}
+
+// ── Tile Fall Animation State ──
+let tileOffsets = {}; // key: "r,c" -> {dy, targetDy, settling}
+
+function setTileFallOffset(row, col, fromRow) {
+  const fallDist = (row - fromRow) * (tileSize + TILE_GAP);
+  tileOffsets[`${row},${col}`] = { dy: -fallDist, settling: true };
+}
+
+function updateTileOffsets() {
+  for (const key in tileOffsets) {
+    const off = tileOffsets[key];
+    off.dy *= 0.7; // ease toward 0
+    if (Math.abs(off.dy) < 0.5) {
+      delete tileOffsets[key];
+    }
+  }
+}
+
+function getTileOffset(row, col) {
+  const off = tileOffsets[`${row},${col}`];
+  return off ? off.dy : 0;
+}
+
+// ── Init ──
+buildLevelGrid();
+</script>
+</body>
+</html>

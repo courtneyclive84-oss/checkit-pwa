@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KiP — Scan History</title>
+<link rel="stylesheet" href="scan-history.css">
+<style>
+  /* Send-to-KiP button + consent modal */
+  .sh-send-row { padding: 10px 16px 6px; display: flex; align-items: center; gap: 10px; }
+  .sh-send-btn {
+    flex: 1; background: linear-gradient(135deg, #2D9B6F, #1B7A55);
+    color: #fff; border: none; padding: 12px 16px; border-radius: 12px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; touch-action: manipulation;
+  }
+  .sh-send-btn:disabled { opacity: 0.5; pointer-events: none; }
+  .sh-send-btn.sending { opacity: 0.7; }
+  .sh-send-note {
+    font-size: 11px; color: #7FBF9C; flex: 0 0 auto; text-align: right; line-height: 1.3;
+  }
+  .sh-send-modal {
+    position: fixed; inset: 0; background: rgba(10,30,22,0.85);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 9999;
+  }
+  .sh-send-modal.show { display: flex; }
+  .sh-send-box {
+    background: #183E2F; border-radius: 16px; padding: 22px;
+    max-width: 380px; width: 100%; color: #fff;
+  }
+  .sh-send-box h3 { font-size: 18px; margin: 0 0 10px; color: #F5A623; }
+  .sh-send-box p { font-size: 13px; line-height: 1.55; color: #D1E8DC; margin: 8px 0; }
+  .sh-send-box ul { font-size: 13px; color: #D1E8DC; margin: 8px 0; padding-left: 20px; line-height: 1.6; }
+  .sh-send-box .sh-send-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .sh-send-box button {
+    flex: 1; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 14px;
+    cursor: pointer; min-height: 44px; border: 2px solid;
+  }
+  .sh-send-cancel { background: transparent; color: #D1E8DC; border-color: #2D5D48; }
+  .sh-send-confirm { background: #2D9B6F; color: #fff; border-color: #2D9B6F; }
+</style>
+</head>
+<body>
+<div class="sh" id="sh-app">
+
+  <!-- Header -->
+  <div class="sh-header">
+    <button class="sh-back" onclick="history.back()" aria-label="Go back">&#8592;</button>
+    <h1>Scan History</h1>
+    <button class="sh-export" id="sh-export-btn" aria-label="Back up history">
+      &#8681; Back up
+    </button>
+  </div>
+
+  <!-- Send to KiP -->
+  <div class="sh-send-row">
+    <button class="sh-send-btn" id="sh-send-btn" aria-label="Send scans to KiP">
+      <span>&#8599;</span> Send to KiP
+    </button>
+    <div class="sh-send-note" id="sh-send-note">Share your scans<br>to help KiP</div>
+  </div>
+
+  <!-- Consent modal -->
+  <div class="sh-send-modal" id="sh-send-modal" role="dialog" aria-labelledby="sh-send-title">
+    <div class="sh-send-box">
+      <h3 id="sh-send-title">Share your scans with KiP?</h3>
+      <p>This sends your full scan history to the KiP research team to help us improve the app and build the I500 database.</p>
+      <p><strong>What gets sent:</strong></p>
+      <ul>
+        <li>Barcodes and product names you scanned</li>
+        <li>Your traffic-light results</li>
+        <li>Decisions you made (Buy / Put back / Just looking)</li>
+        <li>Your selected health profile (diabetes, hypertension, etc.)</li>
+      </ul>
+      <p><strong>What doesn't get sent:</strong></p>
+      <ul>
+        <li>Your name, email, or phone number</li>
+        <li>Your location</li>
+        <li>Anything outside the app</li>
+      </ul>
+      <p style="color:#7FBF9C;font-size:11px;">You can send as many times as you want. Each send adds to the record; nothing gets deleted from your phone.</p>
+      <div class="sh-send-actions">
+        <button class="sh-send-cancel" id="sh-send-cancel">Cancel</button>
+        <button class="sh-send-confirm" id="sh-send-confirm">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="sh-stats" id="sh-stats">
+    <div class="sh-stat sh-stat--total">
+      <div class="sh-stat-num" id="stat-total">0</div>
+      <div class="sh-stat-label">Total</div>
+    </div>
+    <div class="sh-stat sh-stat--green">
+      <div class="sh-stat-num" id="stat-green">0</div>
+      <div class="sh-stat-label">Green</div>
+    </div>
+    <div class="sh-stat sh-stat--amber">
+      <div class="sh-stat-num" id="stat-amber">0</div>
+      <div class="sh-stat-label">Amber</div>
+    </div>
+    <div class="sh-stat sh-stat--red">
+      <div class="sh-stat-num" id="stat-red">0</div>
+      <div class="sh-stat-label">Red</div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="sh-search">
+    <div class="sh-search-wrap">
+      <span class="sh-search-icon">&#128269;</span>
+      <input type="text" class="sh-search-input" id="sh-search" placeholder="Search products or brands..." autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Filter Chips -->
+  <div class="sh-filters" id="sh-filters">
+    <button class="sh-chip sh-chip--active" data-filter="all">All</button>
+    <button class="sh-chip sh-chip--green" data-filter="green">&#9679; Green</button>
+    <button class="sh-chip sh-chip--amber" data-filter="amber">&#9679; Amber</button>
+    <button class="sh-chip sh-chip--red" data-filter="red">&#9679; Red</button>
+    <button class="sh-chip sh-chip--fav" data-filter="favourites">&#9829; Favourites</button>
+  </div>
+
+  <!-- List Container -->
+  <div class="sh-list" id="sh-list"></div>
+
+  <!-- Detail Modal -->
+  <div class="sh-modal-overlay" id="sh-modal-overlay">
+    <div class="sh-modal" id="sh-modal"></div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div class="sh-confirm-overlay" id="sh-confirm-overlay">
+    <div class="sh-confirm">
+      <h3>Delete Scan?</h3>
+      <p>This will permanently remove this scan from your history.</p>
+      <div class="sh-confirm-btns">
+        <button class="sh-btn-cancel" id="sh-confirm-cancel">Cancel</button>
+        <button class="sh-btn-confirm-del" id="sh-confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="sh-toast" id="sh-toast"></div>
+</div>
+
+<script src="scan-history.js"></script>
+<script>
+(() => {
+  // ── State ──
+  let currentPage = 1;
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let allItems = [];
+  let deleteTargetId = null;
+
+  const $list = document.getElementById('sh-list');
+  const $search = document.getElementById('sh-search');
+  const $filters = document.getElementById('sh-filters');
+  const $modalOverlay = document.getElementById('sh-modal-overlay');
+  const $modal = document.getElementById('sh-modal');
+  const $confirmOverlay = document.getElementById('sh-confirm-overlay');
+  const $toast = document.getElementById('sh-toast');
+
+  // ── Helpers ──
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    const day = d.getDate();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const hours = d.getHours().toString().padStart(2, '0');
+    const mins = d.getMinutes().toString().padStart(2, '0');
+    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}, ${hours}:${mins}`;
+  }
+
+  function badgeLetter(tl) {
+    return tl === 'green' ? 'G' : tl === 'amber' ? 'A' : 'R';
+  }
+
+  function teaspoonVisual(n) {
+    if (n === null || n === undefined) return '';
+    const full = Math.floor(n);
+    const half = n - full >= 0.5 ? 1 : 0;
+    return '&#129348;'.repeat(Math.min(full, 10)) + (half ? '&#189;' : '') + ` <strong>${n}</strong> tsp`;
+  }
+
+  function sachetVisual(n) {
+    if (n === null || n === undefined) return '';
+    const full = Math.floor(n);
+    const half = n - full >= 0.5 ? 1 : 0;
+    return '&#129474;'.repeat(Math.min(full, 10)) + (half ? '&#189;' : '') + ` <strong>${n}</strong> sachets`;
+  }
+
+  function conditionLabel(c) {
+    const map = {
+      type2diabetes: 'Type 2 Diabetes',
+      type1diabetes: 'Type 1 Diabetes',
+      hypertension: 'Hypertension',
+      coeliac: 'Coeliac Disease',
+      ibs: 'IBS',
+      ckd: 'Chronic Kidney Disease'
+    };
+    return map[c] || c || 'General';
+  }
+
+  function showToast(msg) {
+    $toast.textContent = msg;
+    $toast.classList.add('active');
+    setTimeout(() => $toast.classList.remove('active'), 2200);
+  }
+
+  // ── Stats ──
+
+  async function refreshStats() {
+    const s = await ScanHistory.getStats();
+    document.getElementById('stat-total').textContent = s.total;
+    document.getElementById('stat-green').textContent = s.green;
+    document.getElementById('stat-amber').textContent = s.amber;
+    document.getElementById('stat-red').textContent = s.red;
+  }
+
+  // ── Render List ──
+
+  function renderCard(item) {
+    const card = document.createElement('div');
+    card.className = 'sh-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.innerHTML = `
+      <div class="sh-badge sh-badge--${item.trafficLight}">${badgeLetter(item.trafficLight)}</div>
+      <div class="sh-card-body">
+        <div class="sh-card-name">${escHtml(item.productName)}</div>
+        ${item.brand ? `<div class="sh-card-brand">${escHtml(item.brand)}</div>` : ''}
+        <div class="sh-card-meta">
+          <span>${formatDate(item.timestamp)}</span>
+          ${item.sugarTeaspoons !== null ? `<span>&#129348; ${item.sugarTeaspoons} tsp</span>` : ''}
+          ${item.saltSachets !== null ? `<span>&#129474; ${item.saltSachets}</span>` : ''}
+        </div>
+      </div>
+      <button class="sh-heart ${item.isFavourite ? 'sh-heart--active' : ''}" data-fav-id="${item.id}" aria-label="Toggle favourite">
+        ${item.isFavourite ? '&#9829;' : '&#9825;'}
+      </button>
+    `;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.sh-heart')) return;
+      openDetail(item.id);
+    });
+    card.querySelector('.sh-heart').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await ScanHistory.toggleFavourite(item.id);
+      await loadList(false);
+      await refreshStats();
+    });
+    return card;
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  async function loadList(reset = true) {
+    if (reset) {
+      currentPage = 1;
+      allItems = [];
+    }
+
+    const isFav = currentFilter === 'favourites';
+    const filterVal = isFav ? 'all' : currentFilter;
+
+    const result = await ScanHistory.getAll({
+      page: currentPage,
+      filter: filterVal,
+      search: currentSearch,
+      favouritesOnly: isFav
+    });
+
+    if (reset) {
+      $list.innerHTML = '';
+      allItems = [];
+    } else {
+      const existing = $list.querySelector('.sh-load-more');
+      if (existing) existing.remove();
+    }
+
+    if (result.items.length === 0 && currentPage === 1) {
+      $list.innerHTML = `
+        <div class="sh-empty">
+          <div class="sh-empty-icon">&#128269;</div>
+          <div class="sh-empty-text">${currentSearch ? 'No results found' : 'No scans yet'}</div>
+        </div>`;
+      return;
+    }
+
+    result.items.forEach(item => {
+      allItems.push(item);
+      $list.appendChild(renderCard(item));
+    });
+
+    if (result.hasMore) {
+      const btn = document.createElement('button');
+      btn.className = 'sh-load-more';
+      btn.textContent = `Load More (${result.total - allItems.length} remaining)`;
+      btn.addEventListener('click', () => {
+        currentPage++;
+        loadList(false);
+      });
+      $list.appendChild(btn);
+    }
+  }
+
+  // ── Detail Modal ──
+
+  async function openDetail(id) {
+    const item = await ScanHistory.getById(id);
+    if (!item) return;
+
+    $modal.innerHTML = `
+      <div class="sh-modal-handle"></div>
+      <div class="sh-detail-badge sh-badge--${item.trafficLight}" style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800;margin:0 auto 12px;">
+        ${badgeLetter(item.trafficLight)}
+      </div>
+      <div class="sh-detail-name">${escHtml(item.productName)}</div>
+      ${item.brand ? `<div class="sh-detail-brand">${escHtml(item.brand)}</div>` : ''}
+
+      <div class="sh-detail-grid">
+        <div class="sh-detail-cell">
+          <div class="sh-detail-cell-label">Barcode</div>
+          <div class="sh-detail-cell-value">${escHtml(item.barcode)}</div>
+        </div>
+        <div class="sh-detail-cell">
+          <div class="sh-detail-cell-label">Scanned</div>
+          <div class="sh-detail-cell-value" style="font-size:13px;">${formatDate(item.timestamp)}</div>
+        </div>
+        ${item.sugarTeaspoons !== null ? `
+        <div class="sh-detail-cell">
+          <div class="sh-detail-cell-label">Sugar</div>
+          <div class="sh-teaspoons">${teaspoonVisual(item.sugarTeaspoons)}</div>
+        </div>` : ''}
+        ${item.saltSachets !== null ? `
+        <div class="sh-detail-cell">
+          <div class="sh-detail-cell-label">Salt</div>
+          <div class="sh-sachets">${sachetVisual(item.saltSachets)}</div>
+        </div>` : ''}
+      </div>
+
+      <div class="sh-detail-condition">
+        Verdict based on: <strong>${conditionLabel(item.userCondition)}</strong>
+      </div>
+
+      <div class="sh-detail-actions">
+        <button class="sh-btn-fav ${item.isFavourite ? 'sh-btn-fav--active' : ''}" id="detail-fav">
+          ${item.isFavourite ? '&#9829; Saved' : '&#9825; Save'}
+        </button>
+        <button class="sh-btn-share" id="detail-share">&#8599; Share</button>
+        <button class="sh-btn-delete" id="detail-delete">&#128465; Delete</button>
+      </div>
+    `;
+
+    $modalOverlay.classList.add('active');
+
+    document.getElementById('detail-fav').addEventListener('click', async () => {
+      await ScanHistory.toggleFavourite(item.id);
+      closeModal();
+      await loadList();
+      await refreshStats();
+      showToast(item.isFavourite ? 'Removed from favourites' : 'Added to favourites');
+    });
+
+    document.getElementById('detail-share').addEventListener('click', () => {
+      const text = `KiP Scan: ${item.productName}${item.brand ? ' (' + item.brand + ')' : ''}\n` +
+        `Traffic Light: ${item.trafficLight.toUpperCase()}\n` +
+        (item.sugarTeaspoons !== null ? `Sugar: ${item.sugarTeaspoons} teaspoons\n` : '') +
+        (item.saltSachets !== null ? `Salt: ${item.saltSachets} sachets\n` : '') +
+        `Condition: ${conditionLabel(item.userCondition)}\n` +
+        `Scanned: ${formatDate(item.timestamp)}\n` +
+        `— KiP by ScanSmart`;
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+      }
+    });
+
+    document.getElementById('detail-delete').addEventListener('click', () => {
+      deleteTargetId = item.id;
+      $confirmOverlay.classList.add('active');
+    });
+  }
+
+  function closeModal() {
+    $modalOverlay.classList.remove('active');
+  }
+
+  // ── Events ──
+
+  // Modal close on overlay tap
+  $modalOverlay.addEventListener('click', (e) => {
+    if (e.target === $modalOverlay) closeModal();
+  });
+
+  // Confirm dialog
+  document.getElementById('sh-confirm-cancel').addEventListener('click', () => {
+    $confirmOverlay.classList.remove('active');
+    deleteTargetId = null;
+  });
+  document.getElementById('sh-confirm-delete').addEventListener('click', async () => {
+    if (deleteTargetId) {
+      await ScanHistory.delete(deleteTargetId);
+      deleteTargetId = null;
+      $confirmOverlay.classList.remove('active');
+      closeModal();
+      await loadList();
+      await refreshStats();
+      showToast('Scan deleted');
+    }
+  });
+
+  // Search (debounced)
+  let searchTimeout;
+  $search.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      currentSearch = $search.value;
+      loadList();
+    }, 300);
+  });
+
+  // Filter chips
+  $filters.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sh-chip');
+    if (!chip) return;
+    $filters.querySelectorAll('.sh-chip').forEach(c => c.classList.remove('sh-chip--active'));
+    chip.classList.add('sh-chip--active');
+    currentFilter = chip.dataset.filter;
+    loadList();
+  });
+
+  // Back up
+  document.getElementById('sh-export-btn').addEventListener('click', async () => {
+    const count = await ScanHistory.exportJSON();
+    showToast(`Backed up ${count} scans`);
+  });
+
+  // ── Send to KiP (opt-in, consented) ──
+  const $sendBtn    = document.getElementById('sh-send-btn');
+  const $sendNote   = document.getElementById('sh-send-note');
+  const $sendModal  = document.getElementById('sh-send-modal');
+  const $sendCancel = document.getElementById('sh-send-cancel');
+  const $sendOk     = document.getElementById('sh-send-confirm');
+
+  function refreshSendNote() {
+    const last = ScanHistory.getLastSentAt && ScanHistory.getLastSentAt();
+    if (!last) {
+      $sendNote.innerHTML = 'Share your scans<br>to help KiP';
+      return;
+    }
+    const d = new Date(last);
+    const now = Date.now();
+    const mins = Math.round((now - d.getTime()) / 60000);
+    let rel;
+    if (mins < 1)       rel = 'just now';
+    else if (mins < 60) rel = `${mins}m ago`;
+    else if (mins < 1440) rel = `${Math.round(mins/60)}h ago`;
+    else                rel = `${Math.round(mins/1440)}d ago`;
+    $sendNote.innerHTML = `Last sent<br>${rel}`;
+  }
+  refreshSendNote();
+
+  $sendBtn.addEventListener('click', () => $sendModal.classList.add('show'));
+  $sendCancel.addEventListener('click', () => $sendModal.classList.remove('show'));
+  $sendModal.addEventListener('click', (e) => {
+    if (e.target === $sendModal) $sendModal.classList.remove('show');
+  });
+
+  $sendOk.addEventListener('click', async () => {
+    $sendOk.disabled = true;
+    $sendOk.textContent = 'Sending...';
+    $sendBtn.classList.add('sending');
+    try {
+      const res = await ScanHistory.sendToKiP();
+      $sendModal.classList.remove('show');
+      showToast(`Sent ${res.scansRecorded} scans to KiP`);
+      refreshSendNote();
+    } catch (e) {
+      console.error('Send failed:', e);
+      showToast('Send failed: ' + (e.message || 'try again'));
+    } finally {
+      $sendOk.disabled = false;
+      $sendOk.textContent = 'Send';
+      $sendBtn.classList.remove('sending');
+    }
+  });
+
+  // ── Init ──
+  refreshStats();
+  loadList();
+})();
+</script>
+</body>
+</html>

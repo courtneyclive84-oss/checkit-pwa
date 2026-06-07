@@ -97,6 +97,28 @@
     }
     .btn-red { background: var(--red); color: var(--white); }
 
+    /* == Haptic Toggle Switch == */
+    .haptic-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 16px; padding: 12px 16px;
+      background: rgba(255,255,255,0.05); border-radius: 10px;
+      max-width: 340px; width: 100%;
+    }
+    .haptic-row-label { font-size: 14px; color: var(--pale-green); }
+    .haptic-switch { position: relative; display: inline-block; width: 44px; height: 26px; flex-shrink: 0; }
+    .haptic-switch input { opacity: 0; width: 0; height: 0; }
+    .haptic-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: var(--mid-green); border-radius: 26px; transition: .25s;
+    }
+    .haptic-slider::before {
+      position: absolute; content: "";
+      height: 20px; width: 20px; left: 3px; bottom: 3px;
+      background: var(--white); border-radius: 50%; transition: .25s;
+    }
+    .haptic-switch input:checked + .haptic-slider { background: var(--emerald); }
+    .haptic-switch input:checked + .haptic-slider::before { transform: translateX(18px); }
+
     /* == Character Bubbles == */
     .char-wrap {
       display: flex; flex-direction: column; align-items: center;
@@ -667,6 +689,13 @@
     <button class="btn btn-primary" id="profile-btn" onclick="confirmProfile()" style="opacity:0.4;pointer-events:none">
       That's me
     </button>
+    <div class="haptic-row">
+      <span class="haptic-row-label">📳 Haptic feedback</span>
+      <label class="haptic-switch">
+        <input type="checkbox" id="haptic-toggle" onchange="toggleHaptic(this.checked)">
+        <span class="haptic-slider"></span>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -1100,7 +1129,10 @@ const BASE = {
   salt: { green: 0.3, amber: 1.5 },
   sugars: { green: 5, amber: 22.5 },
   fat: { green: 3, amber: 17.5 },
-  saturated_fat: { green: 1.5, amber: 5 }
+  saturated_fat: { green: 1.5, amber: 5 },
+  // Caffeine mg/100g — derived from EFSA 2015 400mg/day adult ceiling.
+  // Low ≤15mg (cola-level), Medium 15–80mg (energy-drink-level), High >80mg (energy shots).
+  caffeine: { green: 15, amber: 80 }
 };
 
 const OVERRIDES = {
@@ -1675,6 +1707,72 @@ function getTrafficLight(value, nutrient) {
 }
 
 /* ================================================================
+   HAPTIC FEEDBACK
+   navigator.vibrate() — Android Chrome only.
+   iOS PWA blocks the Vibration API; haptics there require a native
+   app wrapper (Capacitor). iOS users get audio only when the
+   ElevenLabs KiP voice is added.
+   ================================================================ */
+
+function hapticEnabled() {
+  return localStorage.getItem('kip_haptic_enabled') !== 'false' &&
+         ('vibrate' in navigator);
+}
+
+function toggleHaptic(on) {
+  localStorage.setItem('kip_haptic_enabled', on ? 'true' : 'false');
+  // Confirmation pulse so the user knows the toggle worked.
+  if (on) try { navigator.vibrate([60]); } catch(e) {}
+}
+
+// Vibration patterns: [on_ms, off_ms, on_ms, ...]
+const HAPTIC_PATTERNS = {
+  scan:   [60],                  // barcode read — 1 short pulse
+  low:    [100],                 // green  — 1 pulse
+  medium: [100, 100, 100],       // amber  — 2 pulses
+  high:   [100, 100, 100, 100, 100] // red — 3 pulses
+};
+
+function hapticFire(key) {
+  if (!hapticEnabled()) return;
+  try { navigator.vibrate(HAPTIC_PATTERNS[key] || HAPTIC_PATTERNS.scan); } catch(e) {}
+}
+
+function tlToHapticKey(tl) {
+  if (tl === 'green') return 'low';
+  if (tl === 'amber') return 'medium';
+  if (tl === 'red')   return 'high';
+  return null;
+}
+
+// Called from renderResult() after traffic-light values are known.
+function hapticOnResult(saltVal, sugar, caffeineVal, profile) {
+  if (!hapticEnabled()) return;
+  const tlSalt  = getTrafficLight(saltVal,    'salt');
+  const tlSugar = getTrafficLight(sugar,       'sugars');
+  const tlCaff  = getTrafficLight(caffeineVal, 'caffeine');
+
+  if (profile === 'salt') {
+    const k = tlToHapticKey(tlSalt);
+    if (k) hapticFire(k);
+  } else if (profile === 'sugar') {
+    const k = tlToHapticKey(tlSugar);
+    if (k) hapticFire(k);
+  } else if (profile === 'caffeine') {
+    const k = tlToHapticKey(tlCaff);
+    if (k) hapticFire(k);
+  } else {
+    // General — fire all three in sequence (Sugar → Salt → Caffeine)
+    const seq = [
+      tlToHapticKey(tlSugar),
+      tlToHapticKey(tlSalt),
+      tlToHapticKey(tlCaff)
+    ].filter(Boolean);
+    seq.forEach((k, i) => setTimeout(() => hapticFire(k), i * 600));
+  }
+}
+
+/* ================================================================
    SVG ICON HELPERS (replacing emojis)
    ================================================================ */
 
@@ -2088,6 +2186,7 @@ async function startScanner() {
             if (text && state.currentBarcode !== text) {
               state.currentBarcode = text;
               scanLog(`✓ Detected: ${text}`);
+              hapticFire('scan'); // confirmation pulse — barcode read
               pauseDecoder();
               status.textContent = 'Barcode: ' + text;
               lookupProduct(text).catch(e => { try { hideLoading(); } catch(_) {} scanLog('lookup error: ' + (e && e.message || e)); showNotFound(text, 'incomplete'); });
@@ -2144,6 +2243,7 @@ async function startScanner() {
         if (text && state.currentBarcode !== text) {
           state.currentBarcode = text;
           scanLog(`✓ Detected (zxing): ${text}`);
+          hapticFire('scan'); // confirmation pulse — barcode read
           // Pause decoder (keep stream/video/reader alive for instant resume)
           pauseDecoder();
           document.getElementById('scan-status').textContent = 'Barcode: ' + text;
@@ -2809,6 +2909,12 @@ function renderResult(product) {
   const tlSugar = getTrafficLight(sugar, 'sugars');
   const tlFat = getTrafficLight(fat, 'fat');
   const tlSat = getTrafficLight(satFat, 'saturated_fat');
+
+  // Caffeine — present on some OFF products (mg/100g or mg/100ml).
+  const caffeineVal = n['caffeine'] != null ? parseFloat(n['caffeine']) : null;
+
+  // Fire haptic tier signal for the user's selected profile.
+  try { hapticOnResult(saltVal, sugar, caffeineVal, state.profile || 'general'); } catch(e) {}
 
   const ratings = [tlSalt, tlSugar].filter(t => t !== 'unknown');
   const overall = ratings.includes('red') ? 'red' : ratings.includes('amber') ? 'amber' : 'green';
@@ -3564,6 +3670,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const savedLang = localStorage.getItem('kip_language');
   if (savedLang) state.language = savedLang;
+
+  // Restore haptic toggle state (defaults ON if not yet set)
+  const hapticToggleEl = document.getElementById('haptic-toggle');
+  if (hapticToggleEl) {
+    hapticToggleEl.checked = localStorage.getItem('kip_haptic_enabled') !== 'false';
+  }
 
   // Every fresh page load starts at the splash screen — it's the "arriving" moment.
   // Returning users still skip onboarding: tapping "Let's go" goes straight past

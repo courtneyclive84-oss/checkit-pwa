@@ -3968,6 +3968,72 @@ document.addEventListener('touchend', function(e) {
       '</div>');
   }
 
+  // ── Vision OCR — Claude Vision via Cloudflare Worker ─────────────────────
+  // Primary path. Falls back to Tesseract if the Worker is unreachable or errors.
+  // Update this URL after deploying the Worker (workers/checkit-ocr/).
+  var VISION_WORKER_URL = 'https://checkit-ocr.courtneyclive84.workers.dev';
+
+  function fileToBase64(file) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var b64 = e.target.result.split(',')[1];
+        resolve({ data: b64, mediaType: file.type || 'image/jpeg' });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function populateFromVision(data) {
+    // Show form fields so user can review/correct before submitting.
+    document.getElementById('contribute-fields').style.display = '';
+    // Populate with extracted values (null fields left blank for user to fill).
+    if (data.product_name) document.getElementById('contrib-name').value = data.product_name;
+    if (data.sugars    != null) document.getElementById('contrib-sugar').value  = data.sugars;
+    if (data.salt      != null) document.getElementById('contrib-salt').value   = data.salt;
+    if (data.saturates != null) document.getElementById('contrib-satfat').value = data.saturates;
+    if (data.energy_kcal != null) document.getElementById('contrib-kcal').value = data.energy_kcal;
+    // Banner: tells user the fields came from the photo and need a check.
+    var basis = data.basis === 'per_100g' ? 'per 100g' : data.basis === 'per_serving' ? 'per serving' : 'basis unknown';
+    setReadout(
+      '<div aria-live="polite" style="background:rgba(245,166,35,0.10);border:2px dashed var(--amber);' +
+      'border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--amber);line-height:1.55">' +
+      '<strong>Pre-filled from your photo (' + escapeHtml(basis) + ') — check before submitting.</strong> ' +
+      'Any field KiP couldn’t read clearly is left blank. Correct anything wrong, then tap Submit.' +
+      '</div>'
+    );
+  }
+
+  var visionRunning = false;
+  function runVisionOCR(file) {
+    if (!file || visionRunning) return;
+    visionRunning = true;
+    renderStatus('Reading the label…');
+    fileToBase64(file)
+      .then(function(b64) {
+        return fetch(VISION_WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: b64.data, mediaType: b64.mediaType }),
+        });
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Worker ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        populateFromVision(data);
+      })
+      .catch(function() {
+        // Worker unreachable or errored — fall back to on-device Tesseract.
+        clearReadout();
+        runLabelOCR(file);
+      })
+      .then(function() { visionRunning = false; });
+  }
+
   var ocrRunning = false;
   function runLabelOCR(file) {
     if (!file || ocrRunning) return;
@@ -4001,7 +4067,7 @@ document.addEventListener('touchend', function(e) {
     if (!input) return;
     input.addEventListener('change', function () {
       if (this.files && this.files.length > 0) {
-        runLabelOCR(this.files[0]);
+        runVisionOCR(this.files[0]);
       } else {
         clearReadout();
       }

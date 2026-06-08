@@ -806,6 +806,7 @@
         <span>Tap to Start Camera</span>
         <span style="font-size:12px;color:var(--pale-green);font-weight:400;max-width:260px;">iOS needs a direct tap to enable camera. When prompted, choose <b>Allow</b>.</span>
       </button>
+      <button id="scanner-ocr-btn" onclick="photographLabelNoBarcode()" style="position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:15;background:rgba(15,56,37,0.94);border:1.5px solid var(--amber);color:var(--amber);font-size:13px;font-weight:700;padding:10px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(0,0,0,0.4);touch-action:manipulation;">📷 Can't scan it? Photograph the label</button>
     </div>
     <div class="scanner-hint">Hold your camera steady over any food product barcode</div>
     <button class="manual-entry-btn" onclick="showManualEntry()">

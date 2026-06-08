@@ -1967,6 +1967,7 @@ function goTo(screenId) {
 
   if (screenId === 'screen-scanner') {
     updateDailyTracker();
+    state.currentBarcode = null; // Reset dedup guard — re-scanning same barcode must re-trigger lookup
     if (state.cameraWarm && state.zxingReader && state.activeStream) {
       // Camera already warm (user coming back from result screen). Resume decode instantly.
       resumeDecoder();

@@ -1,0 +1,2302 @@
+{
+  "totalStrings": 296,
+  "byKind": {
+    "html_text": 94,
+    "html_attr": 8,
+    "js_template": 107,
+    "js_literal": 87
+  },
+  "bulkNotes": [
+    "onboarding-profile: Region lines 1-629 are the HTML <head> and a large inline CSS <style> block (reset, screen manager, buttons, character bubbles, profile cards, daily tracker, scanner, result/verdict, nutrient cards, sachet/spoon, SaK/Sugar alerts, alternative cards, Dr RooT detail, E-number decoder, contribute flow, weekly stats, spinner, modal, decision buttons, scrollbar) — no user-facing strings, excluded per instructions. Lines 654-656, 705, 712, 728, 735, 750, 786, 805(emoji span), 848 contain inline base64 character-avatar/hero <img> elements and emoji-only spans with no translatable text. The assigned region (onboarding-profile, lines 1-660) ends inside the language screen; I extended to the contiguous onboarding screens (Meet SaK, Meet Dr RooT, First Scan) and the scanner screen header through ~line 851 to capture the complete onboarding flow's static HTML strings. The result-body (#result-body) and detail-body (#detail-body) are empty containers populated by JS further down the file (outside this range) — their dynamically-built verdict/nutrient/E-number/alternative sentences are NOT in this region and should be extracted from the JS region. No large data tables (e.g. additive/E-number database) appear in lines 1-851; that data lives in the JS section beyond this range.",
+    "screens-scanner-contribute: Range 640-930 (+ contribute modal closing buttons through ~933) is pure HTML markup for the onboarding/scanner/result/contribute screens; no JS data tables in this region. Excluded per instructions: all data:image base64 blobs (KiP/SaK/Dr RooT avatars, repeated on most screens), inline SVG icons (stats bar bar-chart/clock/play/globe icons on lines ~772-778), CSS inline styles, element id/class identifiers, the #scan-debug monospace debug pane (developer diagnostic, not user copy), and code comments (e.g. the 'Photograph the label action lives BELOW the box' and 'Primary fallback' HTML comments). Note: several strings (#result-name 'Product Name', #loading-text 'Looking up product...', #contribute-modal-title 'Add to the I500', tracker vals) are static defaults in the HTML that get overwritten by JS at runtime — the dynamically-assembled JS sentences (e.g. detail.sugar.high NHS-recommendation strings, toast/error messages, concatenated nutrition verdicts) live in the <script> block starting at line ~951, OUTSIDE this 640-930 range, and should be extracted from a later range. Line numbers for the contribute photo block (~929-936) and the two modal-btn buttons (~931-932) are approximate because the 300-col truncation collapsed some lines; verify against full file if exact line numbers are load-bearing.",
+    "state-nav: Lines 943-1100 are mostly non-UI JavaScript: security helpers (escapeHtml), the `state` object, the v4.10 tester-data pipeline (worker URLs, UUID helper, WebAudio beep helpers, device-id/opt-out localStorage helpers, sendDecisionEvent payload builder). These contain no user-visible strings except those extracted above. console.warn messages ('[v4.10] Decision write failed:', '[v4.10] Decision write error:') are excluded per instructions. Lines 1119-1160 begin pure data/threshold constants with NO user-facing text: DAILY_LIMITS (sugar/salt limits), BASE traffic-light thresholds (salt/sugars/fat/saturated_fat/caffeine green/amber cutoffs), OVERRIDES (diabetes/hypertension condition thresholds), and the start of the SUGAR_ALIASES array (50+ hidden-sugar ingredient names like 'sucrose','maltodextrin','fructose', etc.). SUGAR_ALIASES is a data lookup table of raw ingredient/synonym strings used for detection logic, not sentences shown verbatim to users as copy — NOT enumerated here as a bulk data table. Note: within the disclaimer/footer strings the words 'Buy', 'Put back', and 'Just looking' are referenced as decision-button labels but their canonical button definitions live outside this 930-1160 range.",
+    "additive-db: Lines 1160-1860 are dominated by the food-additive reference database, NOT UI chrome. Treat the following as data values, NOT translatable UI strings (do not enumerate/translate row-by-row):\n\n1. SUGAR ALIASES array (lines ~1160-1166 of source): a continuation of a list of sugar synonyms ('date syrup','rice syrup','barley malt','muscovado','demerara','jaggery', fruit-juice concentrates, 'maltodextrine', etc.). Raw ingredient-name data.\n\n2. E_NUMBERS object (source lines ~1174-1497, ending with closing '};'): ~330 additive entries keyed by E-number code (E100-E1520). Each entry has four fields: `name` (chemical/common name e.g. 'Tartrazine', 'Monosodium glutamate (MSG)'), `category` (one of a fixed vocabulary: colour, preservative, antioxidant, acid, emulsifier, thickener, stabiliser, sweetener, flavour enhancer, anti-caking, raising agent, glazing agent, other), `risk` (green/amber/red — internal enum, mapped to user labels at line 1653), and `note` (1-sentence plain-English safety summary, e.g. 'Synthetic yellow dye linked to hyperactivity in children...'). The `note` strings ARE human-readable English and a perfectionist i18n pass might localise them, but per the task instruction to summarise rather than enumerate large data tables, they are flagged here as a bulk block (~330 sentences) rather than listed individually. The `category` value strings are also rendered to the user verbatim via the .enumber-cat-badge span (line 1664/507) — i.e. the 13 category words above are user-visible labels and would need a small lookup map. Risk colour-keys (red/amber/green) are NOT shown raw; they map to the labels captured above (Avoid if possible / Worth knowing / No concern) and to the count words red/amber/green.\n\n3. E_NUMBER_NAME_MAP reverse-lookup (source lines ~1498-1573): a JS object mapping lowercase ingredient-name strings ('msg','aspartame','soy lecithin','baking soda', etc.) to E-number codes. Pure matching data, not user-facing.\n\n4. Detection / regex / haptic / SVG-icon helper code (detectENumbers, getThresholds, getTrafficLight, hapticEnabled, the kipSVG/sakSVG/drRootSVG/checkSVG/warningSVG generators, etc.) contains no user-facing English strings — only code identifiers, regex, SVG path/attribute data, and code comments, all excluded per instructions.\n\nThe only genuine UI-chrome strings in this range are the 15 captured in `strings`, all inside buildENumberResultWarning() (source lines ~1610-1640) and buildENumberDecoderSection() (source lines ~1643-1697): the 'E Numbers Detected'/'E Numbers Decoded' headings, the three risk labels, the profile-relevance flags, and the concatenated/templated count-summary sentences.",
+    "renderers-scanner-js: Range 1860-2300 covered. EXCLUDED as non-user-facing: (1) All scanLog(...) calls and console.log('[KiP Scanner]', ...) — these write to a hidden #scan-debug element and the dev console (debug instrumentation, e.g. 'startScanner() called', 'Calling getUserMedia...', '✓ Permission granted', 'Using native BarcodeDetector', 'Falling back to ZXing...', '✓ Scanner running', error traces). They are developer diagnostics, not translatable UI. (2) Code-comment strings ('Scan next', 'Done', \\\"Let's go\\\" appear only inside JS comments describing button behaviour, not as rendered labels — the actual button labels live elsewhere in the HTML, outside this range). (3) SVG glyph 'SALT' (line 1879) is rendered <text> inside the salt-sachet icon graphic — a decorative brand glyph, not prose; left out per SVG-exclusion guidance but noted here. (4) Inline base64 data:image avatar blobs for kipAvatar/sakAvatar/drRootAvatar (lines 1902-1915) ignored per instructions. (5) Hardcoded technical strings not shown to users: ZXing CDN URLs, SRI hashes, BarcodeFormat names, profileLabel map values ('Sugar','Salt','Caffeine','General' at the profileLabel function ~line 2030 — these ARE user-facing label values but the function definition is just a lookup; capture them where the cards/UI consume them). NOTE: The profileLabel() return map {sugar:'Sugar', salt:'Salt', caffeine:'Caffeine', general:'General'} produces user-visible profile labels but is a data-lookup helper; recommend localising at the profile-card definitions rather than here. No large data tables (additive DB) fall in this range.",
+    "lookup-manual-alts: Range 2300-2750 (plus a few lines past 2750 to close out renderAlternatives) is mostly camera/decoder control logic, product-lookup/caching plumbing, SQLite/I500 data-shaping, and OFF API fetch code — the bulk of which is non-user-facing (scanLog/console.log/console.warn diagnostics, code comments, fetch URLs, localStorage keys, and raw data-mapping). No additive/E-number data table appears in this range. User-visible strings are concentrated in three areas: (1) scanner status text (lines ~2336, 2360, 2403), (2) the lookup loading/error toasts (2583, 2660), and (3) the KiP Sugar Detective alert (buildSugarDetectiveAlert, ~2704-2706) and SaK alternatives rendering (renderAlternatives, ~2766-2780). showNotFound(barcode) and showError(...)/showLoading(...) are called here but their own UI copy is defined elsewhere in the file (outside this range). The Sugar Detective body sentence ('...Now you ') appears truncated in the source — the visible string ends mid-clause. SUGAR_ALIASES (referenced by detectHiddenSugars) is a data array of sugar synonyms defined outside this range; its members surface to the user via {aliasList} but should be treated as data, not separately translated UI strings.",
+    "result-notfound: Range 2750-3180 (result-notfound region). NOTE: the SaK alert closing copy (result.sak.alert.title/body, lines ~3181-3182 of buildSakAlert) and the showNotFound not-found banners/KiP-SaK speech (lines 3398-3431) plus the showContribute/showContributePhoto modal titles (3442-3459) fall just past 3180 but are the explicit focus of this task ('not-found banners & KiP/SaK speech'), so they are included. EXCLUDED from this range: large additive/E-number database tables (handled elsewhere), Nutri-Score grade letters A-E and NOVA numeric badges (raw data/labels), traffic-light class names (red/amber/green as CSS classes), and the Dr RooT detail-screen nutritional notes (buildDrRootNote, renderDetail, buildAllergenWarning) which begin at line ~3187 and continue well past 3180 — those belong to a separate 'detail' region and were not extracted here to avoid double-counting. No raw E-number codes or base64/SVG path data were enumerated. localStorage keys, console.warn text, and code comments excluded per instructions.",
+    "detail-health-notes: No large data table appears in this range. Note that detail.row.* labels (Energy, Fat, Salt, etc.) are nutrient labels used both for the rendered table and as the leading token of the Dr RooT note sentences. Raw values interpolated into the js_template strings (salt/sugar/fat figures, mg/µg conversions, barcode, filenames, ingredient text, allergen names) are runtime data, not translatable content. The 'salt = sodium × 2.5' formula and numeric NHS/WHO reference figures are part of the translatable sentence text. Excluded: code comments, console.log/console.warn text ('[I500] Queued contribution...', 'I500 photo save skipped...', 'I500 queue save:'), the CONTRIBUTE_WORKER_URL, localStorage keys, appVersion 'kip-pwa-2026.04', and the kipExportI500 console-usage comment block (developer-only, not user-facing UI).",
+    "ocr-readout-vision: Lines 3680-4095 (region ocr-readout-vision) are almost entirely JavaScript logic: the I500 export/console utilities (kipExportI500, kipI500Stats, triggerDownload), DOMContentLoaded init, the on-device Tesseract.js OCR controller (loader, preprocessImage, recognizeLabel), the Claude Vision Worker OCR path (visionToReadout, populateFromVision, runVisionOCR), and wiring. User-visible strings are sparse and concentrated in the OCR readout renderers (renderReadout, renderStatus, renderFailure, populateFromVision) plus showError/showLoading helpers. No additive/E-number data table is present in this range. NOT user-facing and excluded: all console.log strings (e.g. '[I500] Queue is empty.', scanLog messages, console.table keys total_queued/photos_stored), CSV header tokens ('id','timestamp','barcode', etc. — data field names not UI), download filename templates (kip-i500-queue-*.csv/json, *.jpg), Error() exception messages thrown internally and caught before display ('All Tesseract sources failed', 'Image load failed', 'Worker '+status), code identifiers, CSS/style strings, URLs (VISION_WORKER_URL, CDN/SRI src paths), DOM ids/class names, and all code comments. The 'Energy' row may show kcal/kJ values joined by ' / ' (slash separator, not a translatable word). Indented sub-rows ('of which saturates'/'of which sugars') are stored in source with two leading spaces used purely as an indentation flag (.indexOf('  ')===0) and are .trim()'d before rendering. The showError() message text itself ({msg} param) originates from caller call-sites elsewhere in the file, outside this range."
+  ],
+  "regions": [
+    {
+      "region": "onboarding-profile",
+      "extracted": 55,
+      "missed": 0,
+      "coverage_ok": true
+    },
+    {
+      "region": "screens-scanner-contribute",
+      "extracted": 77,
+      "missed": 5,
+      "coverage_ok": false
+    },
+    {
+      "region": "state-nav",
+      "extracted": 8,
+      "missed": 0,
+      "coverage_ok": true
+    },
+    {
+      "region": "additive-db",
+      "extracted": 15,
+      "missed": 0,
+      "coverage_ok": true
+    },
+    {
+      "region": "renderers-scanner-js",
+      "extracted": 18,
+      "missed": 4,
+      "coverage_ok": false
+    },
+    {
+      "region": "lookup-manual-alts",
+      "extracted": 13,
+      "missed": 2,
+      "coverage_ok": false
+    },
+    {
+      "region": "result-notfound",
+      "extracted": 85,
+      "missed": 3,
+      "coverage_ok": false
+    },
+    {
+      "region": "detail-health-notes",
+      "extracted": 102,
+      "missed": 0,
+      "coverage_ok": true
+    },
+    {
+      "region": "ocr-readout-vision",
+      "extracted": 31,
+      "missed": 0,
+      "coverage_ok": true
+    }
+  ],
+  "strings": [
+    {
+      "key": "app.title",
+      "en": "CheckIT — SCANSMART",
+      "kind": "html_text",
+      "line": 9,
+      "note": "<title> tag; em dash"
+    },
+    {
+      "key": "splash.hero.alt",
+      "en": "The CheckIT Crew — KiP, SaK, and Dr RooT",
+      "kind": "html_attr",
+      "line": 638,
+      "note": "img alt"
+    },
+    {
+      "key": "splash.brandmark",
+      "en": "SCANSMART",
+      "kind": "html_text",
+      "line": 639
+    },
+    {
+      "key": "splash.wordmark",
+      "en": "<span class=\"checkit-check\">Check</span><span class=\"checkit-it\">IT</span>",
+      "kind": "html_text",
+      "line": 640,
+      "note": "split across two spans: 'Check' (italic) + 'IT'"
+    },
+    {
+      "key": "splash.tagline",
+      "en": "For people who want to know what's really in their food.",
+      "kind": "html_text",
+      "line": 641
+    },
+    {
+      "key": "splash.crew.intro",
+      "en": "Hi, we are the <span class=\"checkit-em\">Check</span>IT Crew — KiP, SaK, and Dr RooT. We read what's behind the barcode for you.",
+      "kind": "html_text",
+      "line": 644,
+      "note": "contains <span class=checkit-em>Check</span> markup on 'Check'"
+    },
+    {
+      "key": "splash.cta.start",
+      "en": "Let's go",
+      "kind": "html_text",
+      "line": 647,
+      "note": "button"
+    },
+    {
+      "key": "splash.disclaimer",
+      "en": "Food literacy tool. Not medical advice.",
+      "kind": "html_text",
+      "line": 648
+    },
+    {
+      "key": "lang.char.name",
+      "en": "KiP",
+      "kind": "html_text",
+      "line": 656,
+      "note": "character name label"
+    },
+    {
+      "key": "lang.prompt",
+      "en": "Which language works best for you?",
+      "kind": "html_text",
+      "line": 659,
+      "note": "KiP speech bubble"
+    },
+    {
+      "key": "lang.option.en",
+      "en": "English",
+      "kind": "html_text",
+      "line": 663,
+      "note": "button label, also acts as English option"
+    },
+    {
+      "key": "lang.option.ur",
+      "en": "اردو (Urdu)",
+      "kind": "html_text",
+      "line": 664,
+      "note": "button label; Urdu native + romanised"
+    },
+    {
+      "key": "lang.cta.continue",
+      "en": "Continue",
+      "kind": "html_text",
+      "line": 665,
+      "note": "button"
+    },
+    {
+      "key": "profile.heading",
+      "en": "What are you checking?",
+      "kind": "html_text",
+      "line": 674
+    },
+    {
+      "key": "profile.card.sugar",
+      "en": "Sugar",
+      "kind": "html_text",
+      "line": 677,
+      "note": "profile card label"
+    },
+    {
+      "key": "profile.card.salt",
+      "en": "Salt",
+      "kind": "html_text",
+      "line": 680
+    },
+    {
+      "key": "profile.card.caffeine",
+      "en": "Caffeine",
+      "kind": "html_text",
+      "line": 683
+    },
+    {
+      "key": "profile.card.general",
+      "en": "General",
+      "kind": "html_text",
+      "line": 686
+    },
+    {
+      "key": "profile.cta.confirm",
+      "en": "That's me",
+      "kind": "html_text",
+      "line": 690,
+      "note": "button, initially disabled"
+    },
+    {
+      "key": "profile.haptic.label",
+      "en": "📳 Haptic feedback",
+      "kind": "html_text",
+      "line": 693,
+      "note": "toggle row label, leading emoji"
+    },
+    {
+      "key": "onboard.sak.kipsays",
+      "en": "KiP says...",
+      "kind": "html_text",
+      "line": 707,
+      "note": "label above bubble"
+    },
+    {
+      "key": "onboard.sak.intro",
+      "en": "Meet <strong>SaK</strong>. Scan and Know. Point your camera at any barcode and SaK will tell you what's really inside.",
+      "kind": "html_text",
+      "line": 709,
+      "note": "contains <strong>SaK</strong> markup"
+    },
+    {
+      "key": "onboard.sak.name",
+      "en": "SaK - Scan and Know",
+      "kind": "html_text",
+      "line": 714,
+      "note": "character name"
+    },
+    {
+      "key": "onboard.sak.bubble",
+      "en": "KiP! KiP! Ready to scan. Point me at a barcode and I'll tell you what's really in there.",
+      "kind": "html_text",
+      "line": 715,
+      "note": "SaK speech bubble"
+    },
+    {
+      "key": "onboard.sak.cta.gotit",
+      "en": "Got it",
+      "kind": "html_text",
+      "line": 719,
+      "note": "button"
+    },
+    {
+      "key": "onboard.sak.cta.skip",
+      "en": "Skip",
+      "kind": "html_text",
+      "line": 721,
+      "note": "button"
+    },
+    {
+      "key": "onboard.drroot.intro",
+      "en": "And this is <strong>Dr RooT</strong>. The brains behind the operation. When you want to understand why something matters for your health, RooT has the answers. No jargon. No judgement. Just the truth.",
+      "kind": "html_text",
+      "line": 732,
+      "note": "contains <strong>Dr RooT</strong> markup"
+    },
+    {
+      "key": "onboard.drroot.name",
+      "en": "Dr RooT - Food Knowledge Guide",
+      "kind": "html_text",
+      "line": 737,
+      "note": "character name"
+    },
+    {
+      "key": "onboard.drroot.bubble",
+      "en": "I'll show you what the numbers mean and why they matter. Tap my detail screen any time you want to go deeper.",
+      "kind": "html_text",
+      "line": 739,
+      "note": "Dr RooT speech bubble"
+    },
+    {
+      "key": "onboard.drroot.cta.scan",
+      "en": "Let's scan",
+      "kind": "html_text",
+      "line": 743,
+      "note": "button"
+    },
+    {
+      "key": "onboard.firstscan.bubble",
+      "en": "Let's try it. Grab something from your cupboard and scan it. This is your first step to knowing what's really in your food.",
+      "kind": "html_text",
+      "line": 755,
+      "note": "KiP speech bubble"
+    },
+    {
+      "key": "onboard.firstscan.cta",
+      "en": "Scan my first product",
+      "kind": "html_text",
+      "line": 758,
+      "note": "button"
+    },
+    {
+      "key": "scanner.stats.btn",
+      "en": "<svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"3\" y=\"14\" width=\"4\" height=\"7\" rx=\"1\" fill=\"#2D9B6F\"/><rect x=\"10\" y=\"9\" width=\"4\" height=\"12\" rx=\"1\" fill=\"#F5A623\"/><rect x=\"17\" y=\"5\" width=\"4\" height=\"16\" rx=\"1\" fill=\"#2D9B6F\"/></svg> Stats",
+      "kind": "html_text",
+      "line": 767,
+      "note": "button label after inline SVG"
+    },
+    {
+      "key": "scanner.history.btn",
+      "en": "<svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"#2D9B6F\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M12 8v4l3 3\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg> History",
+      "kind": "html_text",
+      "line": 768,
+      "note": "button label after inline SVG"
+    },
+    {
+      "key": "scanner.play.btn",
+      "en": "<svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"#F5A623\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"3\"/><polygon points=\"10,8 16,12 10,16\" fill=\"#F5A623\" stroke=\"none\"/></svg> Play",
+      "kind": "html_text",
+      "line": 769,
+      "note": "button label after inline SVG"
+    },
+    {
+      "key": "scanner.website.btn",
+      "en": "<svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"#2D9B6F\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18\"/><path d=\"M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18\"/></svg> Website",
+      "kind": "html_text",
+      "line": 770,
+      "note": "button label after inline SVG"
+    },
+    {
+      "key": "scanner.tracker.sugar.val",
+      "en": "{current}g / {limit}g",
+      "kind": "js_template",
+      "line": 777,
+      "params": [
+        "current",
+        "limit"
+      ],
+      "note": "initial static '0g / 30g'; values updated by JS"
+    },
+    {
+      "key": "scanner.tracker.sugar.default",
+      "en": "0g / 30g",
+      "kind": "html_text",
+      "line": 778,
+      "note": "Hardcoded initial daily-tracker display for sugar (#tracker-sugar-val). The unit 'g' and separator are part of rendered UI text; first pass captured only the {current}g/{limit}g template form."
+    },
+    {
+      "key": "scanner.tracker.salt.default",
+      "en": "0g / 6g",
+      "kind": "html_text",
+      "line": 783,
+      "note": "Hardcoded initial daily-tracker display for salt (#tracker-salt-val); distinct visible default-state text not represented by the captured template."
+    },
+    {
+      "key": "scanner.sak.name",
+      "en": "SaK",
+      "kind": "html_text",
+      "line": 788,
+      "note": "character name"
+    },
+    {
+      "key": "scanner.sak.prompt",
+      "en": "KiP! KiP! Point me at a barcode. I'll read it instantly.",
+      "kind": "html_text",
+      "line": 790
+    },
+    {
+      "key": "scanner.tapstart.cta",
+      "en": "Tap to Start Camera",
+      "kind": "html_text",
+      "line": 806,
+      "note": "camera-start button main label (preceded by camera emoji span)"
+    },
+    {
+      "key": "scanner.tapstart.hint",
+      "en": "iOS needs a direct tap to enable camera. When prompted, choose <b>Allow</b>.",
+      "kind": "html_text",
+      "line": 807,
+      "note": "contains <b>Allow</b> markup"
+    },
+    {
+      "key": "scanner.hint",
+      "en": "Hold your camera steady over any food product barcode",
+      "kind": "html_text",
+      "line": 813
+    },
+    {
+      "key": "scanner.manualentry.btn",
+      "en": "Type barcode manually instead",
+      "kind": "html_text",
+      "line": 817,
+      "note": "button"
+    },
+    {
+      "key": "scanner.taptostart.emoji",
+      "en": "📷",
+      "kind": "html_text",
+      "line": 817,
+      "note": "camera emoji glyph; likely non-translatable"
+    },
+    {
+      "key": "scanner.photolabel.btn",
+      "en": "📷 No barcode? Photograph the label",
+      "kind": "html_text",
+      "line": 822,
+      "note": "button, leading camera emoji"
+    },
+    {
+      "key": "scanner.retrycamera.btn",
+      "en": "Retry camera",
+      "kind": "html_text",
+      "line": 826,
+      "note": "button, hidden by default"
+    },
+    {
+      "key": "result.product.name.default",
+      "en": "Product Name",
+      "kind": "html_text",
+      "line": 837,
+      "note": "placeholder text replaced by JS with scanned product name"
+    },
+    {
+      "key": "result.back.aria",
+      "en": "←",
+      "kind": "html_text",
+      "line": 848,
+      "note": "back-arrow glyph (&larr;); decorative, non-translatable"
+    },
+    {
+      "key": "detail.char.name",
+      "en": "Dr RooT",
+      "kind": "html_text",
+      "line": 850,
+      "note": "character name in detail header"
+    },
+    {
+      "key": "detail.header.sub",
+      "en": "Full nutritional breakdown",
+      "kind": "html_text",
+      "line": 851,
+      "note": "detail screen subheading"
+    },
+    {
+      "key": "stats.title",
+      "en": "Weekly Summary",
+      "kind": "html_text",
+      "line": 875
+    },
+    {
+      "key": "manual.title",
+      "en": "Enter Barcode",
+      "kind": "html_text",
+      "line": 884
+    },
+    {
+      "key": "manual.sub",
+      "en": "Type or paste the barcode number from the product packaging. Usually 8 or 13 digits.",
+      "kind": "html_text",
+      "line": 886
+    },
+    {
+      "key": "manual.input.placeholder",
+      "en": "e.g. 5000169021532",
+      "kind": "html_attr",
+      "line": 889,
+      "note": "placeholder attribute on barcode input"
+    },
+    {
+      "key": "manual.btn.cancel",
+      "en": "Cancel",
+      "kind": "html_text",
+      "line": 892
+    },
+    {
+      "key": "manual.btn.scan",
+      "en": "Scan it",
+      "kind": "html_text",
+      "line": 893
+    },
+    {
+      "key": "contribute.title",
+      "en": "Add to the I500",
+      "kind": "html_text",
+      "line": 904,
+      "note": "modal title; also set dynamically via #contribute-modal-title"
+    },
+    {
+      "key": "contribute.sub",
+      "en": "This product isn't in the I500 database yet. Add the key nutrition values from the label and it's there for every CheckIT user who scans this barcode next.",
+      "kind": "html_text",
+      "line": 906
+    },
+    {
+      "key": "contribute.field.name.label",
+      "en": "Product name",
+      "kind": "html_text",
+      "line": 910
+    },
+    {
+      "key": "contribute.field.name.placeholder",
+      "en": "e.g. Brand Biscuits",
+      "kind": "html_attr",
+      "line": 911,
+      "note": "placeholder attribute"
+    },
+    {
+      "key": "contribute.field.brand.label",
+      "en": "Brand",
+      "kind": "html_text",
+      "line": 913
+    },
+    {
+      "key": "contribute.field.brand.placeholder",
+      "en": "e.g. McVitie's",
+      "kind": "html_attr",
+      "line": 914,
+      "note": "placeholder attribute; brand name example"
+    },
+    {
+      "key": "contribute.field.sugar.label",
+      "en": "Sugar (g per 100g)",
+      "kind": "html_text",
+      "line": 916
+    },
+    {
+      "key": "contribute.field.sugar.placeholder",
+      "en": "e.g. 12.5",
+      "kind": "html_attr",
+      "line": 917,
+      "note": "placeholder attribute"
+    },
+    {
+      "key": "contribute.field.salt.label",
+      "en": "Salt (g per 100g)",
+      "kind": "html_text",
+      "line": 919
+    },
+    {
+      "key": "contribute.field.salt.placeholder",
+      "en": "e.g. 0.8",
+      "kind": "html_attr",
+      "line": 920,
+      "note": "placeholder attribute"
+    },
+    {
+      "key": "contribute.field.satfat.label",
+      "en": "Saturated fat (g per 100g)",
+      "kind": "html_text",
+      "line": 922
+    },
+    {
+      "key": "contribute.field.satfat.placeholder",
+      "en": "e.g. 3.2",
+      "kind": "html_attr",
+      "line": 923,
+      "note": "placeholder attribute"
+    },
+    {
+      "key": "contribute.field.kcal.label",
+      "en": "Energy (kcal per 100g)",
+      "kind": "html_text",
+      "line": 925
+    },
+    {
+      "key": "contribute.field.kcal.placeholder",
+      "en": "e.g. 420",
+      "kind": "html_attr",
+      "line": 926,
+      "note": "placeholder attribute"
+    },
+    {
+      "key": "contribute.photo.label",
+      "en": "Or photograph the label",
+      "kind": "html_text",
+      "line": 929
+    },
+    {
+      "key": "contribute.photo.btn",
+      "en": "Open camera for label photo",
+      "kind": "html_text",
+      "line": 931,
+      "note": "approx line; button after hidden file input"
+    },
+    {
+      "key": "contribute.photo.captured",
+      "en": "Photo captured",
+      "kind": "html_text",
+      "line": 932,
+      "note": "approx line; shown after photo taken"
+    },
+    {
+      "key": "contribute.btn.save",
+      "en": "Save",
+      "kind": "html_text",
+      "line": 932,
+      "note": "line 932 in 930-960 block; submit contribution button"
+    },
+    {
+      "key": "contribute.disclaimer",
+      "en": "This goes to <strong style=\"color:var(--emerald)\">KiP's I500 database</strong> &mdash; our own label-verified dataset for products the mainstream apps miss. Your contribution helps other shoppers in your community. It doesn't go to Open Food Facts.",
+      "kind": "html_text",
+      "line": 936,
+      "note": "contains <strong> markup on 'KiP's I500 database' and &mdash;"
+    },
+    {
+      "key": "loading.text",
+      "en": "Looking up product...",
+      "kind": "html_text",
+      "line": 939,
+      "note": "loading overlay default text; updated dynamically"
+    },
+    {
+      "key": "privacy.status.off",
+      "en": "Sharing is OFF.",
+      "kind": "js_literal",
+      "line": 1056,
+      "note": "set in setOptedOut when sharing disabled"
+    },
+    {
+      "key": "privacy.status.on",
+      "en": "Sharing buying choices only — not personal data.",
+      "kind": "js_literal",
+      "line": 1056,
+      "note": "set in setOptedOut when sharing enabled; same string as footer default"
+    },
+    {
+      "key": "privacy.firstScan.disclaimer",
+      "en": "We collect your buying choices, not your personal data. Tap Buy, Put back, or Just looking and KiP sends that tap to ScanSmart with the barcode and traffic-light reading. No name, no location, nothing that identifies you. Turn off in Settings → Privacy.",
+      "kind": "js_literal",
+      "line": 1062,
+      "note": "innerHTML; leading clause wrapped in <strong>, then <br>; first-scan disclaimer bar"
+    },
+    {
+      "key": "privacy.footer.shareLabel",
+      "en": "Share",
+      "kind": "js_template",
+      "line": 1117,
+      "note": "label next to privacy toggle checkbox, within innerHTML template literal"
+    },
+    {
+      "key": "additive.result.summary",
+      "en": "Dr RooT found {count} E number{plural} in this product.",
+      "kind": "js_template",
+      "line": 1625,
+      "params": [
+        "count",
+        "plural"
+      ],
+      "note": "plural is '' or 's' computed inline; base sentence of a concatenated message, further clauses appended at lines 1627 and 1630"
+    },
+    {
+      "key": "additive.result.summary.redCount",
+      "en": " {redCount} flagged red.",
+      "kind": "js_template",
+      "line": 1627,
+      "params": [
+        "redCount"
+      ],
+      "note": "appended to additive.result.summary via += (leading space intentional)"
+    },
+    {
+      "key": "additive.result.summary.profileRelevant",
+      "en": " {count} relevant to your profile.",
+      "kind": "js_template",
+      "line": 1630,
+      "params": [
+        "count"
+      ],
+      "note": "appended to additive.result.summary via += (leading space intentional)"
+    },
+    {
+      "key": "additive.result.warning.title",
+      "en": "E Numbers Detected",
+      "kind": "html_text",
+      "line": 1636,
+      "note": "wrapped in <strong> inside built HTML string"
+    },
+    {
+      "key": "additive.result.warning.cta",
+      "en": "{msg} Tap \"Dr RooT - explain this to me\" for the full breakdown.",
+      "kind": "js_template",
+      "line": 1637,
+      "params": [
+        "msg"
+      ],
+      "note": "msg is the assembled summary sentence (additive.result.summary + appended clauses); the quoted 'Dr RooT - explain this to me' references a button label defined elsewhere"
+    },
+    {
+      "key": "additive.risk.label.red",
+      "en": "Avoid if possible",
+      "kind": "js_literal",
+      "line": 1653,
+      "note": "risk label shown when e.risk === 'red' (ternary)"
+    },
+    {
+      "key": "additive.risk.label.amber",
+      "en": "Worth knowing",
+      "kind": "js_literal",
+      "line": 1653,
+      "note": "risk label shown when e.risk === 'amber' (ternary)"
+    },
+    {
+      "key": "additive.risk.label.green",
+      "en": "No concern",
+      "kind": "js_literal",
+      "line": 1653,
+      "note": "risk label shown for green / default (ternary)"
+    },
+    {
+      "key": "additive.card.profileFlag",
+      "en": "Relevant to your {profileName} profile",
+      "kind": "js_template",
+      "line": 1659,
+      "params": [
+        "profileName"
+      ],
+      "note": "preceded by an inline warning SVG icon; profileName from profileLabel()"
+    },
+    {
+      "key": "additive.decoder.summary.count.red",
+      "en": "{redCount} red",
+      "kind": "js_template",
+      "line": 1681,
+      "params": [
+        "redCount"
+      ],
+      "note": "inside a colored <span>; only the word 'red' is translatable, count is numeric"
+    },
+    {
+      "key": "additive.decoder.summary.count.amber",
+      "en": "{amberCount} amber",
+      "kind": "js_template",
+      "line": 1682,
+      "params": [
+        "amberCount"
+      ],
+      "note": "inside a colored <span>; only the word 'amber' is translatable"
+    },
+    {
+      "key": "additive.decoder.summary.count.green",
+      "en": "{greenCount} green",
+      "kind": "js_template",
+      "line": 1683,
+      "params": [
+        "greenCount"
+      ],
+      "note": "inside a colored <span>; only the word 'green' is translatable"
+    },
+    {
+      "key": "additive.decoder.summary",
+      "en": "{count} E number{plural} found: {breakdown}.",
+      "kind": "js_template",
+      "line": 1685,
+      "params": [
+        "count",
+        "plural",
+        "breakdown"
+      ],
+      "note": "breakdown is a comma-joined list of colored count spans built at lines 1681-1683, e.g. '<span ...>2 red</span>, <span ...>3 amber</span>, <span ...>1 green</span>'. The literal words 'red', 'amber', 'green' appear in those spans."
+    },
+    {
+      "key": "additive.decoder.summary.profileFlag",
+      "en": " {count} flagged for your {profileName} profile.",
+      "kind": "js_template",
+      "line": 1687,
+      "params": [
+        "count",
+        "profileName"
+      ],
+      "note": "appended via +=; wrapped in <strong>; profileName from profileLabel(state.profile)"
+    },
+    {
+      "key": "additive.decoder.header.title",
+      "en": "E Numbers Decoded",
+      "kind": "html_text",
+      "line": 1693,
+      "note": "section header text node in built HTML"
+    },
+    {
+      "key": "detail.salt.dataUnavailable",
+      "en": "Data unavailable",
+      "kind": "js_literal",
+      "line": 1934,
+      "note": "Salt sachet visualisation fallback when saltPer100g is null; wrapped in styled span"
+    },
+    {
+      "key": "detail.salt.perLabel",
+      "en": "{salt}g salt per 100g",
+      "kind": "js_template",
+      "params": [
+        "salt"
+      ],
+      "line": 1942,
+      "note": "salt = saltPer100g.toFixed(2); opens a div that the HIGH/MEDIUM/LOW badge is appended to"
+    },
+    {
+      "key": "detail.level.high",
+      "en": "HIGH",
+      "kind": "js_template",
+      "line": 1943,
+      "note": "Appended to salt label when traffic-light = red; wrapped in coloured strong-style span. Same token reused for sugar (line 1961)"
+    },
+    {
+      "key": "detail.level.medium",
+      "en": "MEDIUM",
+      "kind": "js_template",
+      "line": 1944,
+      "note": "Appended when traffic-light = amber; reused for sugar (line 1962)"
+    },
+    {
+      "key": "detail.level.low",
+      "en": "LOW",
+      "kind": "js_template",
+      "line": 1945,
+      "note": "Appended when traffic-light = green; reused for sugar (line 1963)"
+    },
+    {
+      "key": "detail.salt.sachetEquiv",
+      "en": "Each sachet = approximately 0.3g salt",
+      "kind": "js_literal",
+      "line": 1947,
+      "note": "Sub-caption under the salt sachet row"
+    },
+    {
+      "key": "detail.sugar.perLabel",
+      "en": "{sugar}g sugar per 100g",
+      "kind": "js_template",
+      "params": [
+        "sugar"
+      ],
+      "line": 1960,
+      "note": "sugar = sugarPer100g.toFixed(1); HIGH/MEDIUM/LOW badge appended after"
+    },
+    {
+      "key": "detail.sugar.spoonEquiv",
+      "en": "Each spoon = 4g sugar (1 teaspoon)",
+      "kind": "js_literal",
+      "line": 1965,
+      "note": "Sub-caption under the sugar spoon row"
+    },
+    {
+      "key": "scanner.status.requesting",
+      "en": "Requesting camera access...",
+      "kind": "js_literal",
+      "line": 2132,
+      "note": "Scan status while calling getUserMedia"
+    },
+    {
+      "key": "scanner.error.blocked",
+      "en": "Camera blocked. On iOS: Settings → Safari → Camera → Allow. Then reload.",
+      "kind": "js_literal",
+      "line": 2145,
+      "note": "Shown on NotAllowedError/PermissionDeniedError; contains arrow characters"
+    },
+    {
+      "key": "scanner.error.notFound",
+      "en": "No camera found on this device.",
+      "kind": "js_literal",
+      "line": 2147,
+      "note": "Shown on NotFoundError/DevicesNotFoundError"
+    },
+    {
+      "key": "scanner.error.notSupported",
+      "en": "Camera not supported. Make sure you are using HTTPS.",
+      "kind": "js_literal",
+      "line": 2149,
+      "note": "Shown on NotSupportedError or missing mediaDevices"
+    },
+    {
+      "key": "scanner.error.unavailable",
+      "en": "Camera unavailable: {detail}",
+      "kind": "js_template",
+      "params": [
+        "detail"
+      ],
+      "line": 2151,
+      "note": "Generic camera error fallback; detail = e.message || e.name (browser-supplied)"
+    },
+    {
+      "key": "scanner.error.playbackBlocked",
+      "en": "Video playback blocked. Tap to resume.",
+      "kind": "js_literal",
+      "line": 2169,
+      "note": "Shown when video.play() rejects"
+    },
+    {
+      "key": "scanner.status.barcodeDetected",
+      "en": "Barcode: {code}",
+      "kind": "js_template",
+      "params": [
+        "code"
+      ],
+      "line": 2204,
+      "note": "Shown when a barcode is read; appears in both native-detector (line 2204) and ZXing (line ~2259) paths"
+    },
+    {
+      "key": "scanner.status.loadingDecoder",
+      "en": "Loading decoder...",
+      "kind": "js_literal",
+      "line": 2223,
+      "note": "Shown while loading ZXing fallback bundle"
+    },
+    {
+      "key": "scanner.error.decoderFailed",
+      "en": "Decoder failed to load. Use manual entry.",
+      "kind": "js_literal",
+      "line": 2228,
+      "note": "Shown when ZXing bundle fails to load from all sources"
+    },
+    {
+      "key": "scanner.status.barcodePrefix",
+      "en": "Barcode: {barcode}",
+      "kind": "js_template",
+      "line": 2336,
+      "params": [
+        "barcode"
+      ],
+      "note": "Status text 'Barcode: ' + text; appears in native and zxing detect paths (also ~line 2360)"
+    },
+    {
+      "key": "scanner.status.cameraUnavailable",
+      "en": "Camera unavailable. Use manual entry below.",
+      "kind": "js_literal",
+      "line": 2403,
+      "note": "Set on #scan-status when camera fails"
+    },
+    {
+      "key": "lookup.error.network",
+      "en": "Network error. Check your connection and try again.",
+      "kind": "js_literal",
+      "line": 2660,
+      "note": "showError on fetch failure with no cache fallback"
+    },
+    {
+      "key": "detail.product.fallback_name",
+      "en": "This product",
+      "kind": "js_literal",
+      "line": 2699,
+      "note": "Default fallback product name used in the Sugar Detective alert when product_name is empty: escapeHtml(product.product_name || 'This product'). User-facing, appears in the rendered sentence."
+    },
+    {
+      "key": "detail.sugarDetective.title",
+      "en": "KiP's Sugar Detective",
+      "kind": "js_template",
+      "line": 2705,
+      "note": "Inside buildSugarDetectiveAlert HTML; <strong> heading"
+    },
+    {
+      "key": "detail.sugarDetective.body",
+      "en": "The label for {productName} may seem straightforward. But I found: {aliasList}. That's {count} {kindOrKinds} of sugar hiding in plain sight. Now you",
+      "kind": "js_template",
+      "line": 2706,
+      "params": [
+        "productName",
+        "aliasList",
+        "count",
+        "kindOrKinds"
+      ],
+      "note": "Contains inline <strong> markup around aliasList and count; sentence appears truncated/cut off ('Now you ') in source. kindOrKinds = 'kind' (singular) / 'kinds' (plural) — see next two keys."
+    },
+    {
+      "key": "detail.sugarDetective.kindSingular",
+      "en": "kind",
+      "kind": "js_template",
+      "line": 2706,
+      "note": "Singular form used when found.length === 1"
+    },
+    {
+      "key": "detail.sugarDetective.kindPlural",
+      "en": "kinds",
+      "kind": "js_template",
+      "line": 2706,
+      "note": "Plural form used when found.length !== 1"
+    },
+    {
+      "key": "detail.sugar.detective_body",
+      "en": "The label for {productName} may seem straightforward. But I found: {aliasList}. That's {count} {kindOrKinds} of sugar hiding in plain sight. Now you know.",
+      "kind": "js_template",
+      "params": [
+        "productName",
+        "aliasList",
+        "count",
+        "kindOrKinds"
+      ],
+      "line": 2706,
+      "note": "First pass captured this sentence TRUNCATED ('...Now you ' with trailing space) because the read was clipped at 300 chars. The actual literal ends 'Now you know.' — the trailing 'know.' was missed. The translatable unit must include the full ending."
+    },
+    {
+      "key": "nutrient.label.sugar",
+      "en": "sugar",
+      "kind": "js_template",
+      "line": 2770,
+      "note": "nutrientLabel value used inside alternatives header/card sentences"
+    },
+    {
+      "key": "nutrient.label.salt",
+      "en": "salt",
+      "kind": "js_template",
+      "line": 2770,
+      "note": "nutrientLabel value used inside alternatives header/card sentences"
+    },
+    {
+      "key": "alternatives.card.stat",
+      "en": "{value}g {nutrient} per 100g",
+      "kind": "js_template",
+      "line": 2773,
+      "params": [
+        "value",
+        "nutrient"
+      ],
+      "note": "alt-card-stat; nutrient is 'sugar' or 'salt' (nutrientLabel); value is a.value.toFixed(1)"
+    },
+    {
+      "key": "alternatives.header.text",
+      "en": "KiP! KiP! This one's high in {nutrient}. But I've found something better.",
+      "kind": "js_template",
+      "line": 2778,
+      "params": [
+        "nutrient"
+      ],
+      "note": "SaK speech-bubble header in alt-section; nutrient is 'sugar' or 'salt'"
+    },
+    {
+      "key": "result.value.tracker.sugar",
+      "en": "{sugar}g / {limit}g",
+      "kind": "js_template",
+      "params": [
+        "sugar",
+        "limit"
+      ],
+      "line": 2835,
+      "note": "Daily tracker sugar value readout (tracker-sugar-val.textContent)"
+    },
+    {
+      "key": "result.value.tracker.salt",
+      "en": "{salt}g / {limit}g",
+      "kind": "js_template",
+      "params": [
+        "salt",
+        "limit"
+      ],
+      "line": 2836,
+      "note": "Daily tracker salt value readout (tracker-salt-val.textContent)"
+    },
+    {
+      "key": "stats.todaysLog.label",
+      "en": "Today's Log",
+      "kind": "js_literal",
+      "line": 2855,
+      "note": "section label in showWeeklyStats"
+    },
+    {
+      "key": "stats.sugar.summary",
+      "en": "Sugar: {sugar}g of {limit}g limit ({pct}%)",
+      "kind": "js_template",
+      "line": 2858,
+      "params": [
+        "sugar",
+        "limit",
+        "pct"
+      ]
+    },
+    {
+      "key": "stats.salt.summary",
+      "en": "Salt: {salt}g of {limit}g limit ({pct}%)",
+      "kind": "js_template",
+      "line": 2859,
+      "params": [
+        "salt",
+        "limit",
+        "pct"
+      ]
+    },
+    {
+      "key": "stats.items.scannedToday",
+      "en": "{count} {itemWord} scanned today",
+      "kind": "js_template",
+      "line": 2860,
+      "params": [
+        "count",
+        "itemWord"
+      ],
+      "note": "itemWord = 'item' (singular) or 'items' (plural)"
+    },
+    {
+      "key": "stats.items.singular",
+      "en": "item",
+      "kind": "js_literal",
+      "line": 2860
+    },
+    {
+      "key": "stats.items.plural",
+      "en": "items",
+      "kind": "js_literal",
+      "line": 2860
+    },
+    {
+      "key": "stats.itemsToday.label",
+      "en": "Items today",
+      "kind": "js_literal",
+      "line": 2865
+    },
+    {
+      "key": "stats.item.nutrients",
+      "en": "Sugar: {sugar}g | Salt: {salt}g",
+      "kind": "js_template",
+      "line": 2869,
+      "params": [
+        "sugar",
+        "salt"
+      ],
+      "note": "per-item line in items-today list"
+    },
+    {
+      "key": "stats.thisWeek.label",
+      "en": "This Week",
+      "kind": "js_literal",
+      "line": 2876,
+      "note": "section label preceding weekly table (contains table markup)"
+    },
+    {
+      "key": "stats.table.header.date",
+      "en": "Date",
+      "kind": "html_text",
+      "line": 2876,
+      "note": "weekly table <th>"
+    },
+    {
+      "key": "stats.table.header.items",
+      "en": "Items",
+      "kind": "html_text",
+      "line": 2876,
+      "note": "weekly table <th>"
+    },
+    {
+      "key": "result.product.unknownName",
+      "en": "Unknown Product",
+      "kind": "js_literal",
+      "line": 2910,
+      "note": "fallback product name; also used at line ~3061 in recordDecision"
+    },
+    {
+      "key": "result.name.withBrand",
+      "en": "{name} - {brand}",
+      "kind": "js_template",
+      "line": 2911,
+      "params": [
+        "name",
+        "brand"
+      ],
+      "note": "result-name text; brand suffix optional"
+    },
+    {
+      "key": "result.alt.spinner.searching",
+      "en": "Looking for better alternatives...",
+      "kind": "js_literal",
+      "line": 2962,
+      "note": "spinner label while fetching alternatives"
+    },
+    {
+      "key": "result.i500.badge.title",
+      "en": "From the I500",
+      "kind": "js_template",
+      "line": 2974,
+      "note": "I500 provenance badge <strong>; sits in HTML template"
+    },
+    {
+      "key": "result.i500.badge.verified",
+      "en": "{id} &middot; Label-verified",
+      "kind": "js_template",
+      "line": 2975,
+      "params": [
+        "id"
+      ],
+      "note": "I500 badge subtext; uses HTML entity &middot;"
+    },
+    {
+      "key": "result.i500.badge.notInOFF",
+      "en": " · Not in Open Food Facts",
+      "kind": "js_template",
+      "line": 2975,
+      "note": "appended to I500 badge subtext when inOFF===false; HTML entity &middot;"
+    },
+    {
+      "key": "result.verdict.kipSays.prefix",
+      "en": "KiP says: ",
+      "kind": "js_template",
+      "line": 2983,
+      "note": "verdict banner <strong> prefix before verdict word"
+    },
+    {
+      "key": "result.verdict.green",
+      "en": "Good to go",
+      "kind": "js_template",
+      "line": 2983,
+      "note": "verdict word for green"
+    },
+    {
+      "key": "result.verdict.amber",
+      "en": "One thing to know",
+      "kind": "js_template",
+      "line": 2983,
+      "note": "verdict word for amber"
+    },
+    {
+      "key": "result.verdict.red",
+      "en": "High - check this one",
+      "kind": "js_template",
+      "line": 2983,
+      "note": "verdict word for red"
+    },
+    {
+      "key": "result.section.per100g",
+      "en": "Per 100g",
+      "kind": "html_text",
+      "line": 2997,
+      "note": "section label in result template"
+    },
+    {
+      "key": "result.nutriCard.fat",
+      "en": "Fat",
+      "kind": "js_literal",
+      "line": 3001,
+      "note": "nutriCard label arg"
+    },
+    {
+      "key": "result.nutriCard.satFat",
+      "en": "Sat Fat",
+      "kind": "js_literal",
+      "line": 3002,
+      "note": "nutriCard label arg"
+    },
+    {
+      "key": "result.decision.prompt",
+      "en": "What will you do with this?",
+      "kind": "html_text",
+      "line": 3005,
+      "note": "decision-label"
+    },
+    {
+      "key": "result.decision.buy",
+      "en": "Buy",
+      "kind": "html_text",
+      "line": 3007,
+      "note": "decision button label"
+    },
+    {
+      "key": "result.decision.buy.sub",
+      "en": "goes in basket",
+      "kind": "html_text",
+      "line": 3008,
+      "note": "decision-sub"
+    },
+    {
+      "key": "result.decision.putBack",
+      "en": "Put back",
+      "kind": "html_text",
+      "line": 3010,
+      "note": "decision button label"
+    },
+    {
+      "key": "result.decision.putBack.sub",
+      "en": "KiP saved you",
+      "kind": "html_text",
+      "line": 3011,
+      "note": "decision-sub"
+    },
+    {
+      "key": "result.decision.justLooking",
+      "en": "Just looking",
+      "kind": "html_text",
+      "line": 3013,
+      "note": "decision button label"
+    },
+    {
+      "key": "result.decision.justLooking.sub",
+      "en": "no decision",
+      "kind": "html_text",
+      "line": 3014,
+      "note": "decision-sub"
+    },
+    {
+      "key": "result.btn.drRootExplain",
+      "en": "Dr RooT - explain this to me",
+      "kind": "js_template",
+      "line": 3020,
+      "note": "button text preceded by drRootAvatar icon"
+    },
+    {
+      "key": "result.btn.scanNext",
+      "en": "Scan next",
+      "kind": "html_text",
+      "line": 3022,
+      "note": "primary button"
+    },
+    {
+      "key": "result.btn.done",
+      "en": "Done",
+      "kind": "html_text",
+      "line": 3023,
+      "note": "outline button"
+    },
+    {
+      "key": "result.disclaimer.dataSource",
+      "en": "Data from Open Food Facts. Not medical advice.",
+      "kind": "js_template",
+      "line": 3025,
+      "note": "footer disclaimer; followed by <br> and optional profile line"
+    },
+    {
+      "key": "result.disclaimer.profileActive",
+      "en": "{profile} profile active",
+      "kind": "js_template",
+      "line": 3026,
+      "params": [
+        "profile"
+      ],
+      "note": "shown when state.profile set; profile via profileLabel()"
+    },
+    {
+      "key": "result.decision.toast.buy",
+      "en": "Added to today",
+      "kind": "js_literal",
+      "line": 3100,
+      "note": "decision toast for buy"
+    },
+    {
+      "key": "result.decision.toast.putBack",
+      "en": "Noted: put back",
+      "kind": "js_literal",
+      "line": 3101,
+      "note": "decision toast"
+    },
+    {
+      "key": "result.decision.toast.viewed",
+      "en": "Noted: just looking",
+      "kind": "js_literal",
+      "line": 3102,
+      "note": "decision toast"
+    },
+    {
+      "key": "result.nova.label.1",
+      "en": "Unprocessed",
+      "kind": "js_literal",
+      "line": 3134,
+      "note": "NOVA group 1 label"
+    },
+    {
+      "key": "result.nova.label.2",
+      "en": "Processed ingredients",
+      "kind": "js_literal",
+      "line": 3134,
+      "note": "NOVA group 2 label"
+    },
+    {
+      "key": "result.nova.label.3",
+      "en": "Processed",
+      "kind": "js_literal",
+      "line": 3134,
+      "note": "NOVA group 3 label"
+    },
+    {
+      "key": "result.nova.label.4",
+      "en": "Ultra-processed",
+      "kind": "js_literal",
+      "line": 3134,
+      "note": "NOVA group 4 label"
+    },
+    {
+      "key": "result.nutriScore.title",
+      "en": "Nutri-Score",
+      "kind": "js_template",
+      "line": 3143,
+      "note": "score badge title"
+    },
+    {
+      "key": "result.nova.label.unknown",
+      "en": "Unknown",
+      "kind": "js_template",
+      "line": 3152,
+      "note": "NOVA fallback label"
+    },
+    {
+      "key": "result.nova.title",
+      "en": "NOVA Group",
+      "kind": "js_template",
+      "line": 3153,
+      "note": "score badge title"
+    },
+    {
+      "key": "result.nutriCard.value.unknown",
+      "en": "?",
+      "kind": "js_template",
+      "line": 3166,
+      "note": "nutriCard display when value null"
+    },
+    {
+      "key": "result.nutriCard.dataUnavailable",
+      "en": "data unavailable",
+      "kind": "js_template",
+      "line": 3167,
+      "note": "nutriCard sublabel when value null"
+    },
+    {
+      "key": "result.verdict.green.diabetes",
+      "en": "{name} looks fine for sugar. Green across the board for your profile.",
+      "kind": "js_template",
+      "line": 3180,
+      "params": [
+        "name"
+      ],
+      "note": "buildKipVerdict green + diabetes profile"
+    },
+    {
+      "key": "result.verdict.green.hypertension",
+      "en": "{name} is low in salt. Good choice for your blood pressure.",
+      "kind": "js_template",
+      "line": 3181,
+      "params": [
+        "name"
+      ],
+      "note": "buildKipVerdict green + hypertension profile"
+    },
+    {
+      "key": "result.sak.alert.title",
+      "en": "KiP! KiP! High alert.",
+      "kind": "html_text",
+      "line": 3181,
+      "note": "SaK alert <strong>; closing tag rendered just after line 3180 (buildSakAlert spans 3196-3185 region into 3181)"
+    },
+    {
+      "key": "result.verdict.green.default",
+      "en": "{name} looks fine. Green on the key nutrients for your profile.",
+      "kind": "js_template",
+      "line": 3182,
+      "params": [
+        "name"
+      ],
+      "note": "buildKipVerdict green default"
+    },
+    {
+      "key": "result.sak.alert.body",
+      "en": "This one's flagged: {items}. That's above what I'd want to see for your profile. Check own-brand or community alternatives.",
+      "kind": "js_template",
+      "line": 3182,
+      "params": [
+        "items"
+      ],
+      "note": "SaK alert body; items = list joined by ' and '"
+    },
+    {
+      "key": "result.verdict.amber.2",
+      "en": "{name} has something worth knowing. Check the numbers below before you decide.",
+      "kind": "js_template",
+      "line": 3185,
+      "params": [
+        "name"
+      ],
+      "note": "buildKipVerdict amber"
+    },
+    {
+      "key": "result.verdict.red.2",
+      "en": "{name} is high in {items}. Worth looking at the alternatives.",
+      "kind": "js_template",
+      "line": 3191,
+      "params": [
+        "name",
+        "items"
+      ],
+      "note": "buildKipVerdict red; items = 'salt'/'sugar'/'salt and sugar'"
+    },
+    {
+      "key": "detail.row.energy",
+      "en": "Energy",
+      "kind": "js_literal",
+      "line": 3197
+    },
+    {
+      "key": "detail.row.energyKj",
+      "en": "Energy (kJ)",
+      "kind": "js_literal",
+      "line": 3198
+    },
+    {
+      "key": "detail.row.fatTotal",
+      "en": "Fat (total)",
+      "kind": "js_literal",
+      "line": 3199
+    },
+    {
+      "key": "detail.row.saturatedFat",
+      "en": "Saturated fat",
+      "kind": "js_literal",
+      "line": 3200
+    },
+    {
+      "key": "detail.row.transFat",
+      "en": "Trans fat",
+      "kind": "js_literal",
+      "line": 3201
+    },
+    {
+      "key": "detail.row.cholesterol",
+      "en": "Cholesterol",
+      "kind": "js_literal",
+      "line": 3202
+    },
+    {
+      "key": "detail.row.carbohydrates",
+      "en": "Carbohydrates",
+      "kind": "js_literal",
+      "line": 3203
+    },
+    {
+      "key": "detail.row.ofWhichSugars",
+      "en": "of which sugars",
+      "kind": "js_literal",
+      "line": 3204
+    },
+    {
+      "key": "detail.row.fibre",
+      "en": "Fibre",
+      "kind": "js_literal",
+      "line": 3205
+    },
+    {
+      "key": "detail.row.protein",
+      "en": "Protein",
+      "kind": "js_literal",
+      "line": 3206
+    },
+    {
+      "key": "detail.row.sodium",
+      "en": "Sodium",
+      "kind": "js_literal",
+      "line": 3208
+    },
+    {
+      "key": "detail.row.calcium",
+      "en": "Calcium",
+      "kind": "js_literal",
+      "line": 3209
+    },
+    {
+      "key": "detail.row.iron",
+      "en": "Iron",
+      "kind": "js_literal",
+      "line": 3210
+    },
+    {
+      "key": "detail.row.vitaminD",
+      "en": "Vitamin D",
+      "kind": "js_literal",
+      "line": 3211
+    },
+    {
+      "key": "detail.row.vitaminC",
+      "en": "Vitamin C",
+      "kind": "js_literal",
+      "line": 3212
+    },
+    {
+      "key": "detail.row.vitaminA",
+      "en": "Vitamin A",
+      "kind": "js_literal",
+      "line": 3213
+    },
+    {
+      "key": "detail.ingredients.label",
+      "en": "Ingredients",
+      "kind": "js_template",
+      "line": 3231,
+      "note": "section label; followed by escaped product ingredients_text (data, not translatable)"
+    },
+    {
+      "key": "detail.section.fullNutritionalData",
+      "en": "Full Nutritional Data - per 100g",
+      "kind": "html_text",
+      "line": 3237
+    },
+    {
+      "key": "detail.table.header.nutrient",
+      "en": "Nutrient",
+      "kind": "html_text",
+      "line": 3239
+    },
+    {
+      "key": "detail.trafficLight.legend",
+      "en": "Red = high. Amber = medium. Green = low. Based on FSA thresholds{profileSuffix}.",
+      "kind": "js_template",
+      "params": [
+        "profileSuffix"
+      ],
+      "line": 3243,
+      "note": "profileSuffix = ' adjusted for your {profileLabel} profile' when a profile is set"
+    },
+    {
+      "key": "detail.trafficLight.legend.profileSuffix",
+      "en": " adjusted for your {profileLabel} profile",
+      "kind": "js_template",
+      "params": [
+        "profileLabel"
+      ],
+      "line": 3243,
+      "note": "conditional fragment appended to legend"
+    },
+    {
+      "key": "detail.source.disclaimer",
+      "en": "Source: Open Food Facts. Data may vary. Always check the physical label. Not medical advice.",
+      "kind": "html_text",
+      "line": 3249
+    },
+    {
+      "key": "detail.allergens.label",
+      "en": "Allergens:",
+      "kind": "js_template",
+      "line": 3263,
+      "note": "<strong>; followed by comma-joined allergen names derived from data"
+    },
+    {
+      "key": "detail.drroot.salt.red.hypertension",
+      "en": "Salt is high at {salt}g per 100g. For hypertension, the NHS recommends no more than 6g of salt per day. Reducing salt intake can lower systolic blood pressure by up to 5mmHg.",
+      "kind": "js_template",
+      "params": [
+        "salt"
+      ],
+      "line": 3274
+    },
+    {
+      "key": "detail.drroot.salt.red.general",
+      "en": "Salt is high at {salt}g per 100g. The NHS recommends adults eat no more than 6g of salt per day. Too much salt raises blood pressure, which increases risk of stroke and heart disease.",
+      "kind": "js_template",
+      "params": [
+        "salt"
+      ],
+      "line": 3276
+    },
+    {
+      "key": "detail.drroot.salt.amber",
+      "en": "Salt is {salt}g per 100g, which is medium. The NHS recommends adults eat no more than 6g of salt per day. Worth keeping an eye on your total daily intake.",
+      "kind": "js_template",
+      "params": [
+        "salt"
+      ],
+      "line": 3278
+    },
+    {
+      "key": "detail.drroot.salt.green",
+      "en": "Salt is low at {salt}g per 100g. Good choice for keeping sodium in check.",
+      "kind": "js_template",
+      "params": [
+        "salt"
+      ],
+      "line": 3280
+    },
+    {
+      "key": "detail.drroot.sugar.red.diabetes",
+      "en": "Sugar is high at {sugar}g per 100g. For people managing Type 2 diabetes, reducing sugar intake helps with blood glucose control. Research shows every 10% increase in ultra-processed food consumption links to a 17% increase in T2D risk.",
+      "kind": "js_template",
+      "params": [
+        "sugar"
+      ],
+      "line": 3287
+    },
+    {
+      "key": "detail.drroot.sugar.red.general",
+      "en": "Sugar is high at {sugar}g per 100g. The NHS recommends adults have no more than 30g of free sugars per day. That is roughly 7.5 teaspoons.",
+      "kind": "js_template",
+      "params": [
+        "sugar"
+      ],
+      "line": 3289
+    },
+    {
+      "key": "detail.drroot.sugar.amber",
+      "en": "Sugar is {sugar}g per 100g, which is medium. The NHS recommends no more than 30g of free sugars per day (about 7.5 teaspoons). Factor this into your daily total.",
+      "kind": "js_template",
+      "params": [
+        "sugar"
+      ],
+      "line": 3291
+    },
+    {
+      "key": "detail.drroot.sugar.green",
+      "en": "Sugar is low at {sugar}g per 100g. This is well within healthy limits.",
+      "kind": "js_template",
+      "params": [
+        "sugar"
+      ],
+      "line": 3293
+    },
+    {
+      "key": "detail.drroot.fat.red",
+      "en": "Total fat is high at {fat}g per 100g. The NHS recommends adults have no more than 70g of fat per day.",
+      "kind": "js_template",
+      "params": [
+        "fat"
+      ],
+      "line": 3299
+    },
+    {
+      "key": "detail.drroot.fat.amber",
+      "en": "Total fat is {fat}g per 100g, which is medium. Keep an eye on your total daily fat intake.",
+      "kind": "js_template",
+      "params": [
+        "fat"
+      ],
+      "line": 3300
+    },
+    {
+      "key": "detail.drroot.fat.green",
+      "en": "Total fat is low at {fat}g per 100g.",
+      "kind": "js_template",
+      "params": [
+        "fat"
+      ],
+      "line": 3301
+    },
+    {
+      "key": "detail.drroot.satfat.red",
+      "en": "Saturated fat is high at {satFat}g per 100g. The NHS recommends men eat no more than 30g and women no more than 20g of saturated fat per day. Too much saturated fat raises LDL cholesterol.",
+      "kind": "js_template",
+      "params": [
+        "satFat"
+      ],
+      "line": 3307
+    },
+    {
+      "key": "detail.drroot.satfat.amber",
+      "en": "Saturated fat is {satFat}g per 100g, which is medium. Saturated fat raises LDL cholesterol, so worth watching your daily total.",
+      "kind": "js_template",
+      "params": [
+        "satFat"
+      ],
+      "line": 3308
+    },
+    {
+      "key": "detail.drroot.satfat.green",
+      "en": "Saturated fat is low at {satFat}g per 100g. Good for heart health.",
+      "kind": "js_template",
+      "params": [
+        "satFat"
+      ],
+      "line": 3309
+    },
+    {
+      "key": "detail.drroot.carbs.base",
+      "en": "Carbohydrates: {carbs}g per 100g.",
+      "kind": "js_template",
+      "params": [
+        "carbs"
+      ],
+      "line": 3313
+    },
+    {
+      "key": "detail.drroot.carbs.diabetesSuffix",
+      "en": " For people managing diabetes, tracking carbohydrate intake is important as carbs have the most direct impact on blood glucose levels.",
+      "kind": "js_template",
+      "line": 3314,
+      "note": "conditional fragment appended to carbs.base"
+    },
+    {
+      "key": "detail.drroot.protein",
+      "en": "Protein: {protein}g per 100g. The NHS recommends about 50g of protein per day for adults.",
+      "kind": "js_template",
+      "params": [
+        "protein"
+      ],
+      "line": 3319
+    },
+    {
+      "key": "detail.drroot.fibre",
+      "en": "Fibre: {fibre}g per 100g. The NHS recommends 30g of fibre per day. Most adults in the UK only get about 18g.",
+      "kind": "js_template",
+      "params": [
+        "fibre"
+      ],
+      "line": 3323
+    },
+    {
+      "key": "detail.drroot.fibre.goodSourceSuffix",
+      "en": " This is a good source of fibre.",
+      "kind": "js_template",
+      "line": 3323,
+      "note": "appended when fibre >= 6"
+    },
+    {
+      "key": "detail.drroot.energy",
+      "en": "Energy: {energy} kcal per 100g. The daily reference intake is around 2,000 kcal for women and 2,500 kcal for men.",
+      "kind": "js_template",
+      "params": [
+        "energy"
+      ],
+      "line": 3327
+    },
+    {
+      "key": "detail.drroot.transfat.high",
+      "en": "Trans fat: {transFat}g per 100g. The WHO recommends limiting trans fat to less than 1% of total energy intake. Trans fats raise LDL (\"bad\") cholesterol and lower HDL (\"good\") cholesterol, increasing heart disease risk.",
+      "kind": "js_template",
+      "params": [
+        "transFat"
+      ],
+      "line": 3332
+    },
+    {
+      "key": "detail.drroot.transfat.low",
+      "en": "Trans fat: {transFat}g per 100g. Low level, but the WHO recommends eliminating industrially produced trans fats from the food supply entirely.",
+      "kind": "js_template",
+      "params": [
+        "transFat"
+      ],
+      "line": 3333
+    },
+    {
+      "key": "detail.drroot.transfat.none",
+      "en": "Trans fat: none detected. Good — trans fats are the most harmful type of dietary fat.",
+      "kind": "js_literal",
+      "line": 3334
+    },
+    {
+      "key": "detail.drroot.cholesterol.high",
+      "en": "Cholesterol: {cholMg}mg per 100g. This is relatively high. While dietary cholesterol has less impact than previously thought, the NHS still recommends keeping intake moderate, especially if you have heart disease or high cholesterol.",
+      "kind": "js_template",
+      "params": [
+        "cholMg"
+      ],
+      "line": 3340
+    },
+    {
+      "key": "detail.drroot.cholesterol.normal",
+      "en": "Cholesterol: {cholMg}mg per 100g.",
+      "kind": "js_template",
+      "params": [
+        "cholMg"
+      ],
+      "line": 3341
+    },
+    {
+      "key": "detail.drroot.sodium",
+      "en": "Sodium: {sodiumMg}mg per 100g (salt = sodium × 2.5). The NHS recommends no more than 2,400mg sodium per day.",
+      "kind": "js_template",
+      "params": [
+        "sodiumMg"
+      ],
+      "line": 3347
+    },
+    {
+      "key": "detail.drroot.sodium.hypertensionSuffix",
+      "en": " For hypertension, lower is better — aim for under 1,500mg per day.",
+      "kind": "js_template",
+      "line": 3347,
+      "note": "appended when profile is hypertension"
+    },
+    {
+      "key": "detail.drroot.calcium",
+      "en": "Calcium: {caMg}mg per 100g. Adults need 700mg per day for healthy bones and teeth.",
+      "kind": "js_template",
+      "params": [
+        "caMg"
+      ],
+      "line": 3353
+    },
+    {
+      "key": "detail.drroot.calcium.goodSourceSuffix",
+      "en": " This is a good source of calcium.",
+      "kind": "js_template",
+      "line": 3353,
+      "note": "appended when calcium*1000 > 120"
+    },
+    {
+      "key": "detail.drroot.iron",
+      "en": "Iron: {feMg}mg per 100g. Men need 8.7mg per day, women (19-50) need 14.8mg per day.",
+      "kind": "js_template",
+      "params": [
+        "feMg"
+      ],
+      "line": 3359
+    },
+    {
+      "key": "detail.drroot.iron.usefulSourceSuffix",
+      "en": " This is a useful source of iron.",
+      "kind": "js_template",
+      "line": 3359,
+      "note": "appended when iron*1000 > 2.1"
+    },
+    {
+      "key": "detail.drroot.vitaminD",
+      "en": "Vitamin D: {vdUg}µg per 100g. The NHS recommends 10µg per day for everyone. Most people in the UK don't get enough, especially in winter.",
+      "kind": "js_template",
+      "params": [
+        "vdUg"
+      ],
+      "line": 3365
+    },
+    {
+      "key": "detail.drroot.vitaminD.contributesSuffix",
+      "en": " This contributes meaningfully to your daily intake.",
+      "kind": "js_template",
+      "line": 3365,
+      "note": "appended when vitD*1000000 > 1.5"
+    },
+    {
+      "key": "detail.drroot.vitaminC",
+      "en": "Vitamin C: {vcMg}mg per 100g. Adults need 40mg per day. Vitamin C supports the immune system and helps the body absorb iron.",
+      "kind": "js_template",
+      "params": [
+        "vcMg"
+      ],
+      "line": 3371,
+      "note": "line approx; near vitamin C block"
+    },
+    {
+      "key": "detail.drroot.vitaminC.goodSourceSuffix",
+      "en": " Good source.",
+      "kind": "js_template",
+      "line": 3371,
+      "note": "appended when vitC*1000 > 12"
+    },
+    {
+      "key": "detail.nutriscore.label.a",
+      "en": "Excellent",
+      "kind": "js_literal",
+      "line": 3371
+    },
+    {
+      "key": "detail.nutriscore.label.b",
+      "en": "Good",
+      "kind": "js_literal",
+      "line": 3371
+    },
+    {
+      "key": "detail.nutriscore.label.c",
+      "en": "Average",
+      "kind": "js_literal",
+      "line": 3371
+    },
+    {
+      "key": "detail.nutriscore.label.d",
+      "en": "Poor",
+      "kind": "js_literal",
+      "line": 3371
+    },
+    {
+      "key": "detail.nutriscore.label.e",
+      "en": "Bad",
+      "kind": "js_literal",
+      "line": 3371
+    },
+    {
+      "key": "detail.nutriscore.advice.a",
+      "en": "This product scores well overall for nutritional quality.",
+      "kind": "js_literal",
+      "line": 3372
+    },
+    {
+      "key": "detail.nutriscore.advice.b",
+      "en": "A reasonable choice. Could be eaten regularly as part of a balanced diet.",
+      "kind": "js_literal",
+      "line": 3372
+    },
+    {
+      "key": "detail.nutriscore.advice.c",
+      "en": "Moderate nutritional quality. Fine occasionally but check the details.",
+      "kind": "js_literal",
+      "line": 3372
+    },
+    {
+      "key": "detail.nutriscore.advice.d",
+      "en": "Poor nutritional quality overall. Worth looking for alternatives.",
+      "kind": "js_literal",
+      "line": 3372
+    },
+    {
+      "key": "detail.nutriscore.advice.e",
+      "en": "Very poor nutritional quality. Best kept as an occasional treat, not a regular choice.",
+      "kind": "js_literal",
+      "line": 3372
+    },
+    {
+      "key": "detail.nutriscore.sentence",
+      "en": "Nutri-Score {grade} ({label}). {advice} Nutri-Score is calculated from energy, sugar, saturated fat, sodium, fibre, protein, and fruit/veg content.",
+      "kind": "js_template",
+      "params": [
+        "grade",
+        "label",
+        "advice"
+      ],
+      "line": 3373
+    },
+    {
+      "key": "detail.nova.desc.1",
+      "en": "Unprocessed or minimally processed food. These are the healthiest choices — whole foods with nothing added.",
+      "kind": "js_literal",
+      "line": 3378
+    },
+    {
+      "key": "detail.nova.desc.2",
+      "en": "Processed culinary ingredients (oils, butter, sugar, salt). Used in cooking rather than eaten alone.",
+      "kind": "js_literal",
+      "line": 3378
+    },
+    {
+      "key": "detail.nova.desc.3",
+      "en": "Processed food. Made by adding salt, oil, sugar or other substances to Group 1 foods. Examples: tinned vegetables, cheese, bread.",
+      "kind": "js_literal",
+      "line": 3378
+    },
+    {
+      "key": "detail.nova.desc.4",
+      "en": "Ultra-processed food. Industrial formulations with additives like emulsifiers, flavourings, and colours. Research links high ultra-processed food intake to obesity, Type 2 diabetes, and cardiovascular disease.",
+      "kind": "js_literal",
+      "line": 3378
+    },
+    {
+      "key": "detail.nova.sentence",
+      "en": "NOVA Group {nova}: {desc}",
+      "kind": "js_template",
+      "params": [
+        "nova",
+        "desc"
+      ],
+      "line": 3379
+    },
+    {
+      "key": "detail.nova.diabetesSuffix",
+      "en": " For people managing diabetes, reducing ultra-processed food intake is particularly important — studies show a 17% increase in T2D risk for every 10% increase in ultra-processed food consumption.",
+      "kind": "js_template",
+      "line": 3379,
+      "note": "appended when nova===4 and profile is diabetes"
+    },
+    {
+      "key": "detail.drroot.hiddenSodium",
+      "en": "Hidden sodium detected: {aliases}. These additives contribute to your overall sodium intake and may not be fully reflected in the salt figure on the label.",
+      "kind": "js_template",
+      "params": [
+        "aliases"
+      ],
+      "line": 3387,
+      "note": "aliases = comma-joined matched ingredient terms"
+    },
+    {
+      "key": "detail.drroot.attribution",
+      "en": "Dr RooT says",
+      "kind": "js_template",
+      "line": 3392,
+      "note": "<strong>, preceded by drRootAvatar() icon"
+    },
+    {
+      "key": "notfound.heading.incomplete",
+      "en": "Not enough label info",
+      "kind": "js_literal",
+      "line": 3404,
+      "note": "showNotFound heading when reason='incomplete'"
+    },
+    {
+      "key": "notfound.heading.notInDb",
+      "en": "Product Not Found",
+      "kind": "js_literal",
+      "line": 3404,
+      "note": "showNotFound heading default (not_in_db)"
+    },
+    {
+      "key": "notfound.banner.incomplete.strong",
+      "en": "KiP found this product, but key values are missing",
+      "kind": "js_template",
+      "line": 3406,
+      "note": "banner <strong> for incomplete"
+    },
+    {
+      "key": "notfound.banner.notInDb.strong",
+      "en": "KiP couldn't find barcode {barcode}",
+      "kind": "js_template",
+      "line": 3407,
+      "params": [
+        "barcode"
+      ],
+      "note": "banner <strong> for not_in_db"
+    },
+    {
+      "key": "notfound.banner.incomplete.body",
+      "en": "The sugar or salt figures aren't recorded, so KiP can't give you a read. Photograph the label and KiP will read it for you.",
+      "kind": "js_literal",
+      "line": 3409,
+      "note": "banner body for incomplete"
+    },
+    {
+      "key": "notfound.banner.notInDb.body",
+      "en": "This product isn't in the Open Food Facts database yet. You can help by adding it.",
+      "kind": "js_literal",
+      "line": 3410,
+      "note": "banner body for not_in_db"
+    },
+    {
+      "key": "notfound.bubble.incomplete",
+      "en": "KiP! KiP! I found it, but I'm missing the numbers that matter. Show me the label.",
+      "kind": "js_literal",
+      "line": 3412,
+      "note": "SaK/KiP speech bubble for incomplete"
+    },
+    {
+      "key": "notfound.bubble.notInDb",
+      "en": "KiP! KiP! I can't find this one yet. But you can help fill the gap.",
+      "kind": "js_literal",
+      "line": 3413,
+      "note": "SaK/KiP speech bubble for not_in_db"
+    },
+    {
+      "key": "notfound.btn.photographLabel",
+      "en": "Photograph the label",
+      "kind": "html_text",
+      "line": 3429,
+      "note": "primary button in showNotFound"
+    },
+    {
+      "key": "notfound.btn.enterManually",
+      "en": "Enter values manually",
+      "kind": "html_text",
+      "line": 3430,
+      "note": "outline button in showNotFound"
+    },
+    {
+      "key": "contribute.save.btn.submitPhoto",
+      "en": "Submit photo",
+      "kind": "js_literal",
+      "line": 3459,
+      "note": "contribute save button text (photo)"
+    },
+    {
+      "key": "contribute.photo.previewCaptured",
+      "en": "Photo captured: {filename}",
+      "kind": "js_template",
+      "params": [
+        "filename"
+      ],
+      "line": 3525,
+      "note": "photo preview text node set via textContent"
+    },
+    {
+      "key": "contribute.success.bannerStrong",
+      "en": "Added to the I500",
+      "kind": "html_text",
+      "line": 3673
+    },
+    {
+      "key": "contribute.success.bannerBody",
+      "en": "Your contribution is in the queue. Next time anyone scans this barcode, the data's there.",
+      "kind": "html_text",
+      "line": 3674
+    },
+    {
+      "key": "contribute.success.bubble",
+      "en": "You've just helped close a gap that the mainstream apps leave open. Thank you.",
+      "kind": "html_text",
+      "line": 3679,
+      "note": "KiP speech bubble"
+    },
+    {
+      "key": "contribute.success.btn.viewDetails",
+      "en": "View product details",
+      "kind": "html_text",
+      "line": 3683
+    },
+    {
+      "key": "error.title",
+      "en": "Error",
+      "kind": "js_literal",
+      "line": 3764,
+      "note": "set as result-name textContent in showError()"
+    },
+    {
+      "key": "error.message",
+      "en": "{msg}",
+      "kind": "js_template",
+      "line": 3769,
+      "params": [
+        "msg"
+      ],
+      "note": "showError(msg) renders the passed error message inside <strong>; message text comes from callers"
+    },
+    {
+      "key": "error.try_again",
+      "en": "Try again",
+      "kind": "html_text",
+      "line": 3771,
+      "note": "button label inside showError() template; {msg} rendered above in verdict-text strong"
+    },
+    {
+      "key": "ocr.basis.per_100g",
+      "en": "per 100g",
+      "kind": "js_literal",
+      "line": 3958,
+      "note": "basisLabel() return value"
+    },
+    {
+      "key": "ocr.basis.per_serving",
+      "en": "per serving",
+      "kind": "js_literal",
+      "line": 3959,
+      "note": "basisLabel() return value"
+    },
+    {
+      "key": "ocr.basis.unknown",
+      "en": "basis unknown",
+      "kind": "js_literal",
+      "line": 3960,
+      "note": "basisLabel() default return"
+    },
+    {
+      "key": "ocr.visual.label",
+      "en": "{value}{unit} {nutrient} {basis}",
+      "kind": "js_template",
+      "line": 3986,
+      "params": [
+        "value",
+        "unit",
+        "nutrient",
+        "basis"
+      ],
+      "note": "visualRow label; nutrient is literal 'salt' or 'sugar'; basis from basisLabel(); verdict HIGH/MEDIUM/LOW may be appended"
+    },
+    {
+      "key": "ocr.basis.uncertain.warning",
+      "en": "Basis unclear. We could not tell whether these values are per 100g or per serving, so treat every figure below with extra caution.",
+      "kind": "js_literal",
+      "line": 3998,
+      "note": "renderReadout basisWarn; 'Basis unclear.' wrapped in <strong>"
+    },
+    {
+      "key": "ocr.row.saturates",
+      "en": "of which saturates",
+      "kind": "js_literal",
+      "line": 4007,
+      "note": "indented sub-row; source has two leading spaces used as indent marker, trimmed before display"
+    },
+    {
+      "key": "ocr.row.carbohydrate",
+      "en": "Carbohydrate",
+      "kind": "js_literal",
+      "line": 4008,
+      "note": "nutrition row label"
+    },
+    {
+      "key": "ocr.row.salt.derived",
+      "en": "(derived from sodium)",
+      "kind": "js_template",
+      "line": 4012,
+      "note": "appended to Salt value when derived; styled span"
+    },
+    {
+      "key": "ocr.disclaimer.unverified",
+      "en": "Read from your photo — not yet verified. Values we couldn’t read clearly are shown as ‘Data unavailable,’ never as zero. Always check these figures against the label before making a decision.",
+      "kind": "js_literal",
+      "line": 4032,
+      "note": "EXACT canonical persistent disclaimer; first sentence in <strong>; uses em-dash and curly quotes"
+    },
+    {
+      "key": "ocr.retake_photo",
+      "en": "Retake photo",
+      "kind": "js_literal",
+      "line": 4036,
+      "note": "button label; appears in renderReadout retake button and renderFailure button (line 4053)"
+    },
+    {
+      "key": "ocr.pill.unverified",
+      "en": "Unverified",
+      "kind": "js_literal",
+      "line": 4043,
+      "note": "uppercase pill badge on unverified read card; text-transform:uppercase via CSS"
+    },
+    {
+      "key": "ocr.instant_read",
+      "en": "Instant read · {basis}",
+      "kind": "js_template",
+      "line": 4044,
+      "params": [
+        "basis"
+      ],
+      "note": "middot separator; basis from basisLabel()"
+    },
+    {
+      "key": "ocr.failure.message",
+      "en": "We couldn’t read this photo automatically. Your photo is still saved for our team to verify — or type the values into the fields above.",
+      "kind": "js_literal",
+      "line": 4054,
+      "note": "renderFailure() message; em-dash; followed by Retake photo button"
+    },
+    {
+      "key": "ocr.vision.prefill_nudge",
+      "en": "Decoded from your photo. The values are pre-filled above — correct anything wrong, then tap Submit.",
+      "kind": "js_literal",
+      "line": 4140,
+      "note": "populateFromVision prepended nudge; em-dash"
+    },
+    {
+      "key": "ocr.status.reading_label",
+      "en": "Reading the label…",
+      "kind": "js_literal",
+      "line": 4152,
+      "note": "renderStatus message in runVisionOCR; ellipsis char"
+    },
+    {
+      "key": "ocr.status.reading_on_device",
+      "en": "Reading the label on your device…",
+      "kind": "js_literal",
+      "line": 4188,
+      "note": "renderStatus message in runLabelOCR (Tesseract on-device path); ellipsis char"
+    }
+  ]
+}

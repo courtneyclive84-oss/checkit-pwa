@@ -1,0 +1,6 @@
+# Local pre-wiring backups — snapshots, not for deploy
+*.bak
+
+# i18n process artifacts (applier script + edit/report/deferred queues).
+# Regenerable from the workflows; not needed at runtime or for deploy.
+i18n/_*

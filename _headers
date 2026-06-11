@@ -1,7 +1,55 @@
+# Caching policy (SW-less by design — HTTP cache is the only client cache layer).
+# HTML + i18n stay no-cache (10 May stale-HTML incident: users must always get
+# current markup). Big vendored binaries cache 30 days — they only change with
+# a deliberate library upgrade, which should rename the file or accept the
+# 30-day tail. The SKU database caches 1 day so data refreshes land within a
+# day of deploy while repeat visits skip the 868 KB download.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
   Permissions-Policy: camera=(self), geolocation=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://world.openfoodfacts.org https://images.openfoodfacts.org; font-src 'self' data:; connect-src 'self' blob: data: https://world.openfoodfacts.org https://search.openfoodfacts.org https://kip-data.courtneyclive84.workers.dev https://cloudflareinsights.com https://cdn.jsdelivr.net https://unpkg.com; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://world.openfoodfacts.org https://images.openfoodfacts.org; font-src 'self' data:; connect-src 'self' blob: data: https://world.openfoodfacts.org https://search.openfoodfacts.org https://kip-data.courtneyclive84.workers.dev https://checkit-ocr.courtneyclive84.workers.dev https://checkit-contribute.courtneyclive84.workers.dev https://cloudflareinsights.com https://cdn.jsdelivr.net https://unpkg.com; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+
+/
+  Cache-Control: no-cache, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/scan-history.html
+  Cache-Control: no-cache, must-revalidate
+
+/kip-game.html
+  Cache-Control: no-cache, must-revalidate
+
+/i18n.js
+  Cache-Control: no-cache, must-revalidate
+
+/i18n/*
+  Cache-Control: no-cache, must-revalidate
+
+/scan-history.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/sql-wasm.wasm
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/sql-wasm.js
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/zxing-browser.min.js
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/tesseract.min.js
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/tess/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/ocr-label-parser.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/kip-skus.sqlite
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

@@ -4,3 +4,10 @@
 # i18n process artifacts (applier script + edit/report/deferred queues).
 # Regenerable from the workflows; not needed at runtime or for deploy.
 i18n/_*
+
+# Dated OCR/setup backup folders — archive outside the deploy dir instead
+_ocr_backup*/
+
+# Worker source — deployed via wrangler, must NEVER be served by Pages
+# (11 Jun audit: tracked Worker source on scansmart-site was publicly downloadable)
+workers/

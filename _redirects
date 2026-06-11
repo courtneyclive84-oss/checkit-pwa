@@ -1,0 +1,3 @@
+# Defense-in-depth: Worker source must never be reachable on the public PWA,
+# even if a future commit accidentally re-tracks workers/ (it is also gitignored).
+/workers/* / 301

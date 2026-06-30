@@ -18,6 +18,12 @@
 /index.html
   Cache-Control: no-cache, must-revalidate
 
+# Kill-switch SW must never be stale: force the browser's SW update byte-check to
+# re-fetch the latest sw.js every time (it was inheriting public max-age=14400 = 4h),
+# so a device with a rogue/stale worker actually receives the kill-switch.
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+
 /scan-history.html
   Cache-Control: no-cache, must-revalidate
 

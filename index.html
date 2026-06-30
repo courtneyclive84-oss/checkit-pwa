@@ -2,6 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- SW self-heal guard (30 Jun 2026) — CheckIT is service-worker-less by design.
+       If ANY service worker is controlling/registered for this origin (a rogue/stale
+       worker, e.g. the 10-May marketing-SW trap that serves blank/stale cached HTML),
+       unregister all + delete all caches, then hard-reload ONCE (sessionStorage-guarded
+       so it can never loop). Normal users (no SW) hit the early return — zero effect.
+       Belt-and-braces with the standalone sw.js kill-switch. -->
+  <script>
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      if (!regs.length && !navigator.serviceWorker.controller) return;
+      Promise.all(regs.map(function (r) { return r.unregister(); }))
+        .then(function () { return window.caches ? caches.keys() : []; })
+        .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+        .then(function () {
+          if (!sessionStorage.getItem('sw_healed')) { sessionStorage.setItem('sw_healed', '1'); location.reload(); }
+        })
+        .catch(function () { /* best-effort self-heal; never block the app */ });
+    }).catch(function () {});
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0F2D23">
   <meta name="apple-mobile-web-app-capable" content="yes">

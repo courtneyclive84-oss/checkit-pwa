@@ -18,11 +18,14 @@
 /index.html
   Cache-Control: no-cache, must-revalidate
 
-# Kill-switch SW must never be stale: force the browser's SW update byte-check to
-# re-fetch the latest sw.js every time (it was inheriting public max-age=14400 = 4h),
-# so a device with a rogue/stale worker actually receives the kill-switch.
-/sw.js
-  Cache-Control: no-cache, must-revalidate
+# NOTE (30 Jun 2026): we wanted /sw.js served no-cache so a stale device's SW update
+# check always re-fetches the kill-switch. Cloudflare Pages SPECIAL-CASES service-worker
+# scripts and forces `max-age=14400, must-revalidate` regardless of any _headers rule —
+# verified live: a /sw.js rule here was ignored at origin (cf cache MISS still returned
+# 14400). So no rule is set (a dead rule would be misleading). Non-critical anyway:
+# browsers fetch the top-level SW script bypassing the HTTP cache during update checks
+# (updateViaCache default 'imports'), so the 4h browser cache doesn't gate the kill-switch.
+# The real recurrence fix is the in-page SW self-heal guard in index.html.
 
 /scan-history.html
   Cache-Control: no-cache, must-revalidate

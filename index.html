@@ -37,7 +37,11 @@
   <!-- i18n scaffold: defines window.t / setLanguage / applyTranslations + the EN
        dictionary. Loaded before body scripts so they're available at first paint.
        ur/pl dictionaries are empty (fall back to EN) until natively reviewed. -->
-  <script src="i18n.js"></script>
+  <!-- ?v bumped on EVERY i18n.js change: Cloudflare Pages force-caches i18n.js at max-age=14400
+       regardless of the _headers no-cache rule (same trap as sw.js, 30 Jun). Without the query,
+       a fresh (no-cache) index.html pairs with a stale i18n.js → new keys render as raw keys
+       (e.g. "result.tile.sugar"). The query makes fresh HTML request a never-cached URL. -->
+  <script src="i18n.js?v=4.11.1"></script>
   <style>
     /* == Reset & Base == */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1056,7 +1060,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11-2026-08-07';
+const APP_VERSION = 'v4.11.1-2026-08-10';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {
@@ -3231,9 +3235,10 @@ function buildScoreBadges(product) {
 }
 
 function lvlWord(tl) {
-  if (tl === 'red') return t('result.tile.level.high');
-  if (tl === 'amber') return t('result.tile.level.medium');
-  if (tl === 'green') return t('result.tile.level.low');
+  const tf = (key, fb) => { const v = t(key); return (v && v !== key) ? v : fb; };
+  if (tl === 'red') return tf('result.tile.level.high', 'HIGH');
+  if (tl === 'amber') return tf('result.tile.level.medium', 'MEDIUM');
+  if (tl === 'green') return tf('result.tile.level.low', 'LOW');
   return '';
 }
 
@@ -3244,14 +3249,17 @@ function statTile(kind, val, tl) {
   const isSalt = kind === 'salt';
   const divisor = isSalt ? 0.36 : 4;
   const icon = isSalt ? saltSVG(16) : spoonSVG(16);
-  const label = t(isSalt ? 'result.tile.salt' : 'result.tile.sugar');
-  const unit = t(isSalt ? 'result.tile.unit.sach' : 'result.tile.unit.tsp');
-  const eq = t(isSalt ? 'result.tile.eq.salt' : 'result.tile.eq.sugar');
+  // tf() = translate-or-fallback: if the key is missing (e.g. a stale cached i18n.js after a
+  // deploy that added keys), t() returns the raw key — never show that on the headline tile.
+  const tf = (key, fb) => { const v = t(key); return (v && v !== key) ? v : fb; };
+  const label = isSalt ? tf('result.tile.salt', 'Salt') : tf('result.tile.sugar', 'Sugar');
+  const unit = isSalt ? tf('result.tile.unit.sach', 'sach') : tf('result.tile.unit.tsp', 'tsp');
+  const eq = isSalt ? tf('result.tile.eq.salt', '1 sach≈0.36g') : tf('result.tile.eq.sugar', '1 tsp=4g');
   const head = `<div class="st-head"><span class="st-lbl">${icon}${label}</span><span class="st-eq">${eq}</span></div>`;
   const cls = (tl && tl !== 'unknown') ? tl : '';
   // Missing value → honest "not on label", never 0g (FLT-F4 zero-guard class).
   if (val == null || isNaN(val)) {
-    return `<div class="stat-tile ${cls || 'amber'}"><div class="st-strip"></div>${head}<div class="st-missing">${t('result.tile.missing')}</div></div>`;
+    return `<div class="stat-tile ${cls || 'amber'}"><div class="st-strip"></div>${head}<div class="st-missing">${tf('result.tile.missing', '— not on label')}</div></div>`;
   }
   // Headline count is UNCAPPED (honest): the icon-row decode below caps at SACHET_MAX/SPOON_MAX
   // for physical display, but the number must not understate high-sugar/salt villains (§50).
@@ -3362,6 +3370,7 @@ function renderDetail() {
     ${drRootNote}
     ${eNumberDecoder}
     ${ingredients}
+    <button class="btn btn-primary mt-8" onclick="scanNext()" style="width:100%" data-i18n="result.btn.scanNext">Scan next</button>
     <div class="divider"></div>
     <div class="text-small text-center mb-16" data-i18n="detail.source.disclaimer">Source: Open Food Facts. Data may vary. Always check the physical label. Not medical advice.</div>`;
 

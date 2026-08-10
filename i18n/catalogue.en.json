@@ -809,7 +809,7 @@
     },
     {
       "key": "detail.salt.sachetEquiv",
-      "en": "Each sachet = approximately 0.3g salt",
+      "en": "Each sachet ≈ 0.36g salt",
       "kind": "js_literal",
       "line": 1947,
       "note": "Sub-caption under the salt sachet row"

@@ -307,38 +307,6 @@
       font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
       color: #6f9285; text-align: center; margin: 0 0 10px;
     }
-    /* Sugar | Salt stat tiles */
-    .stat-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
-    .stat-tile {
-      background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.12);
-      border-radius: 16px; padding: 12px 12px 13px; position: relative; overflow: hidden;
-    }
-    .stat-tile.green { border-color: var(--emerald); }
-    .stat-tile.amber { border-color: var(--amber); }
-    .stat-tile.red   { border-color: var(--red); }
-    .st-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
-    .stat-tile.green .st-strip { background: var(--emerald); }
-    .stat-tile.amber .st-strip { background: var(--amber); }
-    .stat-tile.red   .st-strip { background: var(--red); }
-    .st-head {
-      display: flex; align-items: center; justify-content: space-between; gap: 6px;
-      font-size: 12px; font-weight: 800; letter-spacing: .4px;
-      text-transform: uppercase; color: var(--pale-green);
-    }
-    .st-lbl { display: flex; align-items: center; gap: 6px; }
-    .st-lbl svg, .st-lbl span { flex-shrink: 0; }
-    .st-eq {
-      font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none;
-      color: var(--pale-green); opacity: .82; white-space: nowrap;
-    }
-    .st-count { font-size: 26px; font-weight: 800; margin-top: 6px; line-height: 1; display: flex; align-items: baseline; gap: 6px; }
-    .st-count .unit { font-size: 13px; font-weight: 600; color: var(--pale-green); }
-    .st-grams { margin-top: 7px; display: flex; align-items: center; gap: 8px; }
-    .st-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .st-dot.green { background: var(--emerald); } .st-dot.amber { background: var(--amber); } .st-dot.red { background: var(--red); }
-    .st-grams b { font-size: 15px; } .st-grams .lvl { font-size: 11px; font-weight: 800; letter-spacing: .5px; }
-    .st-grams .lvl.green { color: var(--emerald); } .st-grams .lvl.amber { color: var(--amber); } .st-grams .lvl.red { color: #ff8a7d; }
-    .st-missing { font-size: 12px; color: var(--soft-amber); margin-top: 8px; font-weight: 600; }
     .verdict-banner {
       border-radius: 14px; padding: 16px 18px;
       margin-bottom: 20px; display: flex; align-items: center; gap: 14px;
@@ -1060,7 +1028,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.1-2026-08-10';
+const APP_VERSION = 'v4.11.2-2026-08-12';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {
@@ -3074,18 +3042,13 @@ function renderResult(product) {
         <strong>${t('result.verdict.kipSays.prefix')}${overall === 'green' ? t('result.verdict.green') : overall === 'amber' ? t('result.verdict.amber') : t('result.verdict.red')}</strong>
         ${verdict}
       </div>
-    </div>
-    <div class="stat-tiles">
-      ${statTile('sugar', sugar, tlSugar)}
-      ${statTile('salt', saltVal, tlSalt)}
     </div>`;
 
+  // Body leads with the spoon/sachet VISUAL decode — immediately visible, before any alerts,
+  // so the user always sees how many teaspoons of sugar / sachets of salt without scrolling
+  // (KiP's signature "villain unit" — the whole point). Alerts follow the visuals.
   const html = `
     ${i500Badge}
-    ${sakAlert}
-    ${sugarDetective}
-    ${eNumberWarning}
-    ${altPlaceholder}
     ${buildScoreBadges(product)}
     <div class="visual-section">
       <div class="visual-title">${saltSVG(18)} Salt</div>
@@ -3095,6 +3058,10 @@ function renderResult(product) {
       <div class="visual-title">${spoonSVG(18)} Sugar</div>
       ${buildSpoons(sugar)}
     </div>
+    ${sakAlert}
+    ${sugarDetective}
+    ${eNumberWarning}
+    ${altPlaceholder}
     <div class="section-label" style="text-transform:none" data-i18n="result.section.per100g">PER 100g</div>
     <div class="nutrient-grid">
       ${nutriCard('Salt', saltVal, 'g', tlSalt)}
@@ -3232,44 +3199,6 @@ function buildScoreBadges(product) {
   }
   html += '</div>';
   return html;
-}
-
-function lvlWord(tl) {
-  const tf = (key, fb) => { const v = t(key); return (v && v !== key) ? v : fb; };
-  if (tl === 'red') return tf('result.tile.level.high', 'HIGH');
-  if (tl === 'amber') return tf('result.tile.level.medium', 'MEDIUM');
-  if (tl === 'green') return tf('result.tile.level.low', 'LOW');
-  return '';
-}
-
-// Sugar/Salt hero stat tile — headline count + grams + traffic dot + canonical unit key.
-// kind 'sugar' → 1 tsp = 4g · kind 'salt' → 1 sachet ≈ 0.36g (Bible/Notion canon).
-// tl is the same getTrafficLight() value the per-100g grid uses, so tile and grid never disagree.
-function statTile(kind, val, tl) {
-  const isSalt = kind === 'salt';
-  const divisor = isSalt ? 0.36 : 4;
-  const icon = isSalt ? saltSVG(16) : spoonSVG(16);
-  // tf() = translate-or-fallback: if the key is missing (e.g. a stale cached i18n.js after a
-  // deploy that added keys), t() returns the raw key — never show that on the headline tile.
-  const tf = (key, fb) => { const v = t(key); return (v && v !== key) ? v : fb; };
-  const label = isSalt ? tf('result.tile.salt', 'Salt') : tf('result.tile.sugar', 'Sugar');
-  const unit = isSalt ? tf('result.tile.unit.sach', 'sach') : tf('result.tile.unit.tsp', 'tsp');
-  const eq = isSalt ? tf('result.tile.eq.salt', '1 sach≈0.36g') : tf('result.tile.eq.sugar', '1 tsp=4g');
-  const head = `<div class="st-head"><span class="st-lbl">${icon}${label}</span><span class="st-eq">${eq}</span></div>`;
-  const cls = (tl && tl !== 'unknown') ? tl : '';
-  // Missing value → honest "not on label", never 0g (FLT-F4 zero-guard class).
-  if (val == null || isNaN(val)) {
-    return `<div class="stat-tile ${cls || 'amber'}"><div class="st-strip"></div>${head}<div class="st-missing">${tf('result.tile.missing', '— not on label')}</div></div>`;
-  }
-  // Headline count is UNCAPPED (honest): the icon-row decode below caps at SACHET_MAX/SPOON_MAX
-  // for physical display, but the number must not understate high-sugar/salt villains (§50).
-  const count = Math.round(val / divisor);
-  const grams = isSalt ? val.toFixed(2) : val.toFixed(1);
-  return `<div class="stat-tile ${cls}"><div class="st-strip"></div>
-    ${head}
-    <div class="st-count">≈${count}<span class="unit">${unit}</span></div>
-    <div class="st-grams"><span class="st-dot ${cls}"></span><b>${grams}g</b><span class="lvl ${cls}">${lvlWord(tl)}</span></div>
-  </div>`;
 }
 
 function nutriCard(label, value, unit, tl) {

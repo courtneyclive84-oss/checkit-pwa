@@ -79,7 +79,11 @@
 
     /* == Shared Layout == */
     .screen-inner {
-      flex: 1; display: flex; flex-direction: column;
+      /* flex: 1 0 auto (NOT 1 1 0) so the inner grows to its content and .screen
+         SCROLLS when content is taller than the viewport. With flex:1 1 0 +
+         justify-content:center, overflowing content is centred AND clipped —
+         unreachable by scrolling (the classic flexbox-centering trap). */
+      flex: 1 0 auto; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       /* bottom clearance so the CTA never hides behind the fixed privacy footer
          (~34px) + the iOS home-indicator / Safari toolbar safe area */
@@ -1030,7 +1034,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.3-2026-08-17';
+const APP_VERSION = 'v4.11.4-2026-08-17';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {

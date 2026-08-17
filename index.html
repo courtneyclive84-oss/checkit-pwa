@@ -85,10 +85,16 @@
          unreachable by scrolling (the classic flexbox-centering trap). */
       flex: 1 0 auto; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      /* bottom clearance so the CTA never hides behind the fixed privacy footer
-         (~34px) + the iOS home-indicator / Safari toolbar safe area */
-      padding: 32px 24px calc(64px + env(safe-area-inset-bottom, 0px));
+      padding: 32px 24px calc(16px + env(safe-area-inset-bottom, 0px));
       min-height: 100%;
+    }
+    /* Onboarding CTA pinned to the viewport bottom (above the fixed privacy footer)
+       so it is ALWAYS visible on a tall screen without scrolling. sticky keeps it in
+       flow (centres normally on short screens) but pins it when content overflows. */
+    .cta-sticky {
+      position: sticky;
+      bottom: calc(44px + env(safe-area-inset-bottom, 0px));
+      z-index: 20; width: 100%;
     }
     .screen-inner.top { justify-content: flex-start; padding-top: 48px; }
 
@@ -789,7 +795,7 @@
       </div>
     </div>
     <div class="spacer"></div>
-    <button class="btn btn-amber mt-24" onclick="goTo('screen-scanner')" data-i18n="onboard.drroot.cta.scan">Let's scan</button>
+    <button class="btn btn-amber mt-24 cta-sticky" onclick="goTo('screen-scanner')" data-i18n="onboard.drroot.cta.scan">Let's scan</button>
   </div>
 </div>
 
@@ -1034,7 +1040,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.4-2026-08-17';
+const APP_VERSION = 'v4.11.5-2026-08-17';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {

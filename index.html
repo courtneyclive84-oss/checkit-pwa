@@ -81,7 +81,9 @@
     .screen-inner {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 32px 24px;
+      /* bottom clearance so the CTA never hides behind the fixed privacy footer
+         (~34px) + the iOS home-indicator / Safari toolbar safe area */
+      padding: 32px 24px calc(64px + env(safe-area-inset-bottom, 0px));
       min-height: 100%;
     }
     .screen-inner.top { justify-content: flex-start; padding-top: 48px; }
@@ -1028,7 +1030,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.2-2026-08-12';
+const APP_VERSION = 'v4.11.3-2026-08-17';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {

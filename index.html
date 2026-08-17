@@ -1040,7 +1040,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.5-2026-08-17';
+const APP_VERSION = 'v4.11.6-2026-08-17';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {
@@ -2960,6 +2960,21 @@ function hasUsableNutrition(product) {
   return hasSugar && hasSalt;
 }
 
+/* ── Single funnel for every write to the result screen ──────────────
+   #result-hero is pinned and never scrolls. Up to v4.11.5 only renderResult()
+   wrote it, so showNotFound() / contribute-success / showError() replaced the
+   body but left the PREVIOUS product's verdict banner pinned on top — e.g.
+   scan A -> Dr RooT -> back -> scan B (not in DB) showed A's verdict above B's
+   "Not enough label info" screen. Every result-screen render now goes through
+   here: the hero is always set (pass '' to clear it) and the scroll container
+   is reset to the top so new content never opens part-scrolled. */
+function setResultScreen(heroHTML, bodyHTML) {
+  const hero = document.getElementById('result-hero');
+  const body = document.getElementById('result-body');
+  if (hero) hero.innerHTML = heroHTML || '';
+  if (body) { body.innerHTML = bodyHTML; body.scrollTop = 0; }
+}
+
 function renderResult(product) {
  try {
   // Three doors, one outcome. If KiP can't read sugar + salt, the product
@@ -3107,8 +3122,7 @@ function renderResult(product) {
       ${state.profile ? t('result.disclaimer.profileActive', { profile: profileLabel(state.profile) }) : ''}
     </div>`;
 
-  document.getElementById('result-hero').innerHTML = heroHTML;
-  document.getElementById('result-body').innerHTML = html;
+  setResultScreen(heroHTML, html);
  } catch (e) {
   try { hideLoading(); } catch(_) {}
   console.warn('renderResult failed, routing to label fallback:', e);
@@ -3482,7 +3496,7 @@ function showNotFound(barcode, reason) {
     ? t('notfound.bubble.incomplete')
     : t('notfound.bubble.notInDb');
   document.getElementById('result-name').textContent = heading;
-  document.getElementById('result-body').innerHTML = `
+  setResultScreen('', `
     <div class="verdict-banner amber" style="margin-top:0">
       <div class="verdict-icon">${verdictSvg('amber')}</div>
       <div class="verdict-text">
@@ -3498,7 +3512,7 @@ function showNotFound(barcode, reason) {
     </div>
     <button class="btn btn-primary mt-8" onclick="showContributePhoto('${barcode}')" data-i18n="notfound.btn.photographLabel">Photograph the label</button>
     <button class="btn btn-outline mt-8" onclick="showContribute('${barcode}')" data-i18n="notfound.btn.enterManually">Enter values manually</button>
-    <button class="btn btn-outline mt-16 mb-16" onclick="scanNext()">Scan next</button>`;
+    <button class="btn btn-outline mt-16 mb-16" onclick="scanNext()">Scan next</button>`);
   goTo('screen-result');
 }
 
@@ -3735,7 +3749,7 @@ function submitContribution() {
   state.currentProduct = product;
   state.addedToDay = false;
   document.getElementById('result-name').textContent = name;
-  document.getElementById('result-body').innerHTML = `
+  setResultScreen('', `
     <div class="verdict-banner green" style="margin-top:0">
       <div class="verdict-icon">${verdictSvg('green')}</div>
       <div class="verdict-text">
@@ -3750,7 +3764,7 @@ function submitContribution() {
       </div>
     </div>
     <button class="btn btn-primary mt-16" onclick="lookupProduct('${barcode}')" data-i18n="contribute.success.btn.viewDetails">View product details</button>
-    <button class="btn btn-outline mt-8 mb-16" onclick="scanNext()">Scan next</button>`;
+    <button class="btn btn-outline mt-8 mb-16" onclick="scanNext()">Scan next</button>`);
   // Always land on the result screen. Without this, submitting from the scanner
   // escape-hatch ("Can't scan it? Photograph the label") closed the modal back
   // onto the scanner — the photo→submit→photo loop. goTo is idempotent for the
@@ -3825,12 +3839,12 @@ function triggerDownload(blob, filename) {
    ================================================================ */
 function showError(msg) {
   document.getElementById('result-name').textContent = t('error.title');
-  document.getElementById('result-body').innerHTML = `
+  setResultScreen('', `
     <div class="verdict-banner red">
       <div class="verdict-icon">${verdictSvg('red')}</div>
       <div class="verdict-text"><strong>${msg}</strong></div>
     </div>
-    <button class="btn btn-primary mt-24" onclick="backToScanner()" data-i18n="error.try_again">Try again</button>`;
+    <button class="btn btn-primary mt-24" onclick="backToScanner()" data-i18n="error.try_again">Try again</button>`);
   goTo('screen-result');
 }
 

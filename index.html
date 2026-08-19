@@ -935,8 +935,8 @@
     <div class="modal-sub" data-i18n="manual.sub">
       Type or paste the barcode number from the product packaging. Usually 8 or 13 digits.
     </div>
-    <input class="modal-input" id="barcode-input" type="number" data-i18n-attr="placeholder:manual.input.placeholder"
-      placeholder="e.g. 5000169021532" inputmode="numeric"
+    <input class="modal-input" id="barcode-input" type="text" data-i18n-attr="placeholder:manual.input.placeholder"
+      placeholder="e.g. 5000169021532" inputmode="numeric" pattern="[0-9]*"
       onkeydown="if(event.key==='Enter')lookupManual()">
     <div class="modal-btns">
       <button class="btn btn-outline btn-sm" style="max-width:none" onclick="hideManualEntry()" data-i18n="manual.btn.cancel">Cancel</button>
@@ -1049,7 +1049,7 @@ const state = {
    Decisions write to D1 immediately on tap, unless opted out.
    ================================================================ */
 const KIP_DATA_WORKER_URL = 'https://kip-data.courtneyclive84.workers.dev/submit';
-const APP_VERSION = 'v4.11.9-2026-08-17';
+const APP_VERSION = 'v4.11.10-2026-08-19';
 const DISCLAIMER_VERSION = 'v4.10-2026-04-29';
 
 function _uuidv4() {
